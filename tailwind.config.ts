@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Fredoka", "sans-serif"],
-        body: ["Nunito", "sans-serif"],
+        display: ['"Press Start 2P"', "monospace"],
+        pixel: ["VT323", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -61,6 +61,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Retro colors
+        neon: {
+          green: "hsl(120 100% 50%)",
+          pink: "hsl(330 100% 60%)",
+          cyan: "hsl(180 100% 50%)",
+          yellow: "hsl(50 100% 50%)",
+          orange: "hsl(30 100% 50%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -76,10 +84,24 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pixel-bounce": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
+        "neon-pulse": {
+          "0%, 100%": { 
+            boxShadow: "0 0 10px hsl(120 100% 50%), 0 0 20px hsl(120 100% 50% / 0.5)",
+          },
+          "50%": { 
+            boxShadow: "0 0 20px hsl(120 100% 50%), 0 0 40px hsl(120 100% 50% / 0.8)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pixel-bounce": "pixel-bounce 0.5s steps(3) infinite",
+        "neon-pulse": "neon-pulse 2s ease-in-out infinite",
       },
     },
   },
