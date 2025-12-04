@@ -1,21 +1,17 @@
 import { useGame } from '@/context/GameContext';
 import { ProgressBar } from '@/components/game/ProgressBar';
 import { TechMentor } from '@/components/game/TechMentor';
-import { MachineCard } from '@/components/game/MachineCard';
-import { RepairStep } from '@/components/game/RepairStep';
+import { SchoolMap } from '@/components/game/SchoolMap';
+import { PCInspection } from '@/components/game/PCInspection';
+import { Workbench } from '@/components/game/Workbench';
+import { BloatwareShooter } from '@/components/game/BloatwareShooter';
 import { OSCard } from '@/components/game/OSCard';
 import { ScoreDisplay } from '@/components/game/ScoreDisplay';
+import { ResourceDisplay } from '@/components/game/ResourceDisplay';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Home, RotateCcw } from 'lucide-react';
-
-const machines = [
-  { type: 'laptop' as const, name: 'Old Laptop', emoji: '💻', description: 'A trusty portable that needs some love', specs: ['Core i3', '4GB RAM', 'HDD 320GB'] },
-  { type: 'desktop' as const, name: 'School Desktop', emoji: '🖥️', description: 'Classic tower PC from the computer lab', specs: ['Core 2 Duo', '2GB RAM', 'HDD 160GB'] },
-  { type: 'thin-client' as const, name: 'Thin Client', emoji: '📦', description: 'Compact machine perfect for basic tasks', specs: ['Atom', '1GB RAM', 'Flash 8GB'] },
-  { type: 'tablet' as const, name: 'Old Tablet', emoji: '📱', description: 'Android tablet with a cracked screen', specs: ['ARM', '2GB RAM', '16GB Storage'] },
-];
+import { ArrowLeft, ArrowRight, Home, RotateCcw, Map } from 'lucide-react';
 
 const osOptions = [
   { role: 'student', name: 'Student Station', distro: 'Linux Mint', description: 'Perfect for learning and homework with a friendly interface', tools: ['LibreOffice', 'Firefox', 'GCompris', 'Scratch'], benefits: ['Privacy', 'Light', 'Educational'] },
@@ -29,35 +25,73 @@ const themes = ['🌊 Ocean Blue', '🌲 Forest Green', '🌅 Sunset Orange', '�
 const appPackages = ['📚 Education Pack', '🎨 Creative Suite', '🔬 Science Tools', '🎮 Coding Games', '📖 E-Reader'];
 const restrictions = ['🔒 No Social Media', '⏰ Time Limits', '🛡️ Safe Browse', '📵 No Downloads'];
 
+const phaseSteps: Record<string, number> = {
+  map: 0,
+  inspect: 1,
+  workbench: 2,
+  os: 3,
+  shooter: 4,
+  customize: 5,
+  result: 6,
+};
+
 export default function Game() {
-  const { state, setStep, selectMachine, completeRepair, selectOS, setCustomizations, resetGame } = useGame();
+  const { 
+    state, 
+    setPhase, 
+    selectMachine, 
+    selectRoom,
+    selectOS, 
+    setCustomizations, 
+    resetGame,
+    completeRoom,
+    calculateSavings,
+  } = useGame();
   const navigate = useNavigate();
 
-  const mentorMessages = [
-    "Welcome, young technician! 🌟 I'm your Tech Mentor. Together, we'll rescue old computers and give them a new purpose. Ready to build a resistant digital village?",
-    "Great choice! Now let's pick a machine to save. Each one has its own story and potential. Which one speaks to you?",
-    "Excellent! Now comes the fun part - diagnosis and repair! Toggle each action to fix this machine. Every repair makes a difference! 🔧",
-    "The machine is ready for a new brain! Choose the right operating system based on who will use this computer. Open-source means freedom! 🐧",
-    "Almost done! Let's customize the experience. Pick a theme, select useful apps, and set up any restrictions needed for school use.",
-    "Mission accomplished! 🎉 Look at what you've achieved! You're now a true digital resistance hero!"
-  ];
+  const currentStep = phaseSteps[state.currentPhase] || 0;
 
-  const canProceed = () => {
-    switch (state.step) {
-      case 1: return state.machine !== null;
-      case 2: return state.repairs.some(r => r.completed);
-      case 3: return state.selectedOS !== null;
-      case 4: return state.customizations.theme !== '';
-      default: return true;
+  const mentorMessages: Record<string, string> = {
+    map: "Welcome to the school! 🏫 Choose a room to liberate from Big Tech. Each room has different challenges!",
+    inspect: "Let's diagnose this machine! 🔍 Check the specs and issues before we start repairs.",
+    workbench: "Time for the fun part! 🔧 Drag components to the correct slots on the motherboard. Be careful - wrong placements cost time!",
+    os: "The hardware is ready! 🐧 Now choose the right Linux distribution for this room's needs.",
+    shooter: "Installing Linux... but wait! 👾 Big Tech bloatware is trying to sneak in! Click to destroy them!",
+    customize: "Almost there! 🎨 Let's customize this machine for its new purpose.",
+    result: "Mission accomplished! 🎉 You've saved another computer from the e-waste pile!"
+  };
+
+  const handleRoomSelect = (roomId: string) => {
+    selectRoom(roomId);
+    setPhase('inspect');
+  };
+
+  const handleMachineSelect = (type: typeof state.machine) => {
+    selectMachine(type);
+  };
+
+  const handleWorkbenchComplete = () => {
+    setPhase('os');
+  };
+
+  const handleOSSelect = (os: string) => {
+    selectOS(os);
+    setPhase('shooter');
+  };
+
+  const handleShooterComplete = () => {
+    setPhase('customize');
+  };
+
+  const handleCustomizationComplete = () => {
+    if (state.currentRoom) {
+      completeRoom(state.currentRoom);
     }
+    setPhase('result');
   };
 
-  const handleNext = () => {
-    if (state.step < 5) setStep(state.step + 1);
-  };
-
-  const handleBack = () => {
-    if (state.step > 0) setStep(state.step - 1);
+  const handleBackToMap = () => {
+    setPhase('map');
   };
 
   const handleRestart = () => {
@@ -65,101 +99,73 @@ export default function Game() {
     navigate('/');
   };
 
+  const savings = calculateSavings();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Progress */}
-        <ProgressBar currentStep={state.step} totalSteps={6} />
+        <ProgressBar currentStep={currentStep} totalSteps={7} />
+
+        {/* Resources */}
+        {state.currentPhase !== 'map' && <ResourceDisplay />}
 
         {/* Mentor */}
         <TechMentor
-          message={mentorMessages[state.step]}
-          mood={state.step === 5 ? 'proud' : state.step === 0 ? 'excited' : 'happy'}
+          message={mentorMessages[state.currentPhase]}
+          mood={state.currentPhase === 'result' ? 'proud' : state.currentPhase === 'shooter' ? 'excited' : 'happy'}
         />
 
         {/* Content */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={state.step}
+            key={state.currentPhase}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
             className="mb-8"
           >
-            {/* Step 0: Introduction */}
-            {state.step === 0 && (
-              <div className="text-center py-12">
-                <motion.div
-                  className="text-8xl mb-6"
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  🏘️
-                </motion.div>
-                <h2 className="text-3xl font-bold text-foreground mb-4">
-                  Build Your Digital Village
-                </h2>
-                <p className="text-muted-foreground max-w-lg mx-auto">
-                  Old computers don't have to become e-waste. With the right skills and open-source tools, 
-                  we can extend their life and empower schools with sustainable technology.
-                </p>
-              </div>
+            {/* Map Phase */}
+            {state.currentPhase === 'map' && (
+              <SchoolMap onSelectRoom={handleRoomSelect} />
             )}
 
-            {/* Step 1: Machine Selection */}
-            {state.step === 1 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                {machines.map((machine) => (
-                  <MachineCard
-                    key={machine.type}
-                    {...machine}
-                    isSelected={state.machine === machine.type}
-                    onClick={() => selectMachine(machine.type)}
-                  />
-                ))}
-              </div>
+            {/* Inspection Phase */}
+            {state.currentPhase === 'inspect' && (
+              <PCInspection 
+                onSelectMachine={handleMachineSelect}
+                onContinue={() => setPhase('workbench')}
+              />
             )}
 
-            {/* Step 2: Repair */}
-            {state.step === 2 && (
-              <div className="space-y-3">
-                {state.repairs.map((repair, index) => (
-                  <RepairStep
-                    key={repair.id}
-                    repair={repair}
-                    onToggle={() => completeRepair(repair.id)}
-                    index={index}
-                  />
-                ))}
-                <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-primary font-medium">Current Impact Score</span>
-                    <span className="text-2xl font-bold text-primary">
-                      {state.score.environmental + state.score.money + state.score.hardware}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            {/* Workbench Phase */}
+            {state.currentPhase === 'workbench' && (
+              <Workbench onComplete={handleWorkbenchComplete} />
             )}
 
-            {/* Step 3: OS Selection */}
-            {state.step === 3 && (
+            {/* OS Selection Phase */}
+            {state.currentPhase === 'os' && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {osOptions.map((os, index) => (
                   <OSCard
                     key={os.role}
                     {...os}
                     isSelected={state.selectedOS === os.role}
-                    onClick={() => selectOS(os.role)}
+                    onClick={() => handleOSSelect(os.role)}
                     index={index}
                   />
                 ))}
               </div>
             )}
 
-            {/* Step 4: Customization */}
-            {state.step === 4 && (
+            {/* Shooter Phase */}
+            {state.currentPhase === 'shooter' && (
+              <BloatwareShooter onComplete={handleShooterComplete} />
+            )}
+
+            {/* Customization Phase */}
+            {state.currentPhase === 'customize' && (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-foreground mb-3">Choose a Theme</h3>
@@ -204,10 +210,10 @@ export default function Game() {
                         key={restriction}
                         variant={state.customizations.restrictions.includes(restriction) ? 'default' : 'game'}
                         onClick={() => {
-                          const restrictions = state.customizations.restrictions.includes(restriction)
+                          const newRestrictions = state.customizations.restrictions.includes(restriction)
                             ? state.customizations.restrictions.filter(r => r !== restriction)
                             : [...state.customizations.restrictions, restriction];
-                          setCustomizations({ ...state.customizations, restrictions });
+                          setCustomizations({ ...state.customizations, restrictions: newRestrictions });
                         }}
                       >
                         {restriction}
@@ -215,16 +221,28 @@ export default function Game() {
                     ))}
                   </div>
                 </div>
+
+                {state.customizations.theme && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-center"
+                  >
+                    <Button variant="hero" onClick={handleCustomizationComplete}>
+                      Complete Setup <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </motion.div>
+                )}
               </div>
             )}
 
-            {/* Step 5: Results */}
-            {state.step === 5 && (
+            {/* Results Phase */}
+            {state.currentPhase === 'result' && (
               <div>
                 <ScoreDisplay
                   environmental={state.score.environmental}
                   money={state.score.money}
-                  autonomy={state.score.autonomy}
+                  autonomy={state.score.autonomy + state.shooterScore}
                   hardware={state.score.hardware}
                 />
                 
@@ -235,11 +253,19 @@ export default function Game() {
                   transition={{ delay: 1 }}
                 >
                   <h3 className="text-xl font-bold text-foreground mb-4">📋 Mission Summary</h3>
-                  <div className="space-y-2 text-muted-foreground">
-                    <p>🖥️ Machine rescued: <span className="text-foreground font-medium">{machines.find(m => m.type === state.machine)?.name}</span></p>
-                    <p>🔧 Repairs completed: <span className="text-foreground font-medium">{state.repairs.filter(r => r.completed).length}</span></p>
-                    <p>🐧 OS installed: <span className="text-foreground font-medium">{osOptions.find(o => o.role === state.selectedOS)?.distro}</span></p>
-                    <p>🎨 Theme: <span className="text-foreground font-medium">{state.customizations.theme}</span></p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2 text-muted-foreground">
+                      <p>🏫 Room liberated: <span className="text-foreground font-medium">{state.rooms.find(r => r.id === state.currentRoom)?.name}</span></p>
+                      <p>🖥️ Machine rescued: <span className="text-foreground font-medium">{state.machine}</span></p>
+                      <p>🔧 Components installed: <span className="text-foreground font-medium">{Object.keys(state.placedComponents).length}</span></p>
+                      <p>🐧 OS installed: <span className="text-foreground font-medium">{osOptions.find(o => o.role === state.selectedOS)?.distro}</span></p>
+                    </div>
+                    <div className="space-y-2 text-muted-foreground">
+                      <p>👾 Bloatware destroyed: <span className="text-foreground font-medium">{state.bloatwareDestroyed}</span></p>
+                      <p>🌱 Carbon saved: <span className="text-green-400 font-medium">{savings.carbon}kg CO₂</span></p>
+                      <p>💰 Money saved: <span className="text-yellow-400 font-medium">€{savings.money}</span></p>
+                      <p>🛡️ Resistance score: <span className="text-primary font-medium">{state.resistanceScore}</span></p>
+                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -251,35 +277,30 @@ export default function Game() {
         <div className="flex justify-between items-center pt-6 border-t border-border">
           <Button
             variant="ghost"
-            onClick={state.step === 5 ? handleRestart : handleBack}
-            disabled={state.step === 0}
+            onClick={state.currentPhase === 'result' ? handleRestart : state.currentPhase === 'map' ? handleRestart : handleBackToMap}
           >
-            {state.step === 5 ? (
+            {state.currentPhase === 'result' ? (
               <>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Play Again
               </>
+            ) : state.currentPhase === 'map' ? (
+              <>
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </>
             ) : (
               <>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                <Map className="w-4 h-4 mr-2" />
+                Back to Map
               </>
             )}
           </Button>
 
-          {state.step === 5 ? (
-            <Button variant="warm" onClick={() => navigate('/')}>
-              <Home className="w-4 h-4 mr-2" />
-              Home
-            </Button>
-          ) : (
-            <Button
-              variant="hero"
-              onClick={handleNext}
-              disabled={!canProceed()}
-            >
-              {state.step === 0 ? "Let's Go!" : 'Continue'}
-              <ArrowRight className="w-4 h-4 ml-2" />
+          {state.currentPhase === 'result' && (
+            <Button variant="warm" onClick={handleBackToMap}>
+              <Map className="w-4 h-4 mr-2" />
+              Continue to Next Room
             </Button>
           )}
         </div>
