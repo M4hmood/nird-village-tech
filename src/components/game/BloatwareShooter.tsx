@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '@/context/GameContext';
+import { Button } from '@/components/ui/button';
 
 interface Bloatware {
   id: number;
@@ -26,14 +27,16 @@ interface BloatwareShooterProps {
 }
 
 export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooterProps) {
-  const { addShooterScore, destroyBloatware, state } = useGame();
+  const { addShooterScore, destroyBloatware, state, addPerfectInstall } = useGame();
   const [bloatwares, setBloatwares] = useState<Bloatware[]>([]);
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isComplete, setIsComplete] = useState(false);
   const [hitEffects, setHitEffects] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [combo, setCombo] = useState(0);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const idCounter = useRef(0);
+  const hitCount = useRef(0);
 
   // Spawn bloatware
   useEffect(() => {
@@ -45,9 +48,9 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
         id: idCounter.current++,
         type: type.type,
         icon: type.icon,
-        x: Math.random() * 80 + 10, // 10-90% of width
+        x: Math.random() * 80 + 10,
         y: -10,
-        speed: Math.random() * 1.5 + 0.5, // 0.5-2 speed
+        speed: Math.random() * 1.5 + 0.5,
         points: type.points,
       };
       setBloatwares(prev => [...prev, newBloatware]);
@@ -64,7 +67,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
       setBloatwares(prev => {
         const updated = prev
           .map(b => ({ ...b, y: b.y + b.speed }))
-          .filter(b => b.y < 100); // Remove if past bottom
+          .filter(b => b.y < 100);
         return updated;
       });
     }, 50);
@@ -80,14 +83,17 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
       setProgress(prev => {
         if (prev >= 100) {
           setIsComplete(true);
+          if (hitCount.current > 0) {
+            addPerfectInstall();
+          }
           return 100;
         }
-        return prev + (100 / duration / 10); // Complete in 'duration' seconds
+        return prev + (100 / duration / 10);
       });
     }, 100);
 
     return () => clearInterval(progressInterval);
-  }, [duration, isComplete]);
+  }, [duration, isComplete, addPerfectInstall]);
 
   // Timer
   useEffect(() => {
@@ -103,55 +109,71 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
   // Handle click on bloatware
   const handleClick = useCallback((id: number, x: number, y: number, points: number) => {
     setBloatwares(prev => prev.filter(b => b.id !== id));
-    addShooterScore(points);
+    const comboBonus = Math.floor(combo / 3) * 5;
+    addShooterScore(points + comboBonus);
     destroyBloatware();
+    hitCount.current++;
+    setCombo(c => c + 1);
     
     // Add hit effect
     setHitEffects(prev => [...prev, { id, x, y }]);
     setTimeout(() => {
       setHitEffects(prev => prev.filter(e => e.id !== id));
     }, 500);
-  }, [addShooterScore, destroyBloatware]);
+  }, [addShooterScore, destroyBloatware, combo]);
 
   // Check for bloatware hitting the "hard drive"
   useEffect(() => {
-    const hitCount = bloatwares.filter(b => b.y >= 85).length;
-    if (hitCount > 0) {
+    const escaped = bloatwares.filter(b => b.y >= 85).length;
+    if (escaped > 0) {
       setBloatwares(prev => prev.filter(b => b.y < 85));
-      // Penalty: slow down progress
-      setProgress(prev => Math.max(0, prev - hitCount * 5));
+      setProgress(prev => Math.max(0, prev - escaped * 5));
+      setCombo(0);
     }
   }, [bloatwares]);
 
   return (
     <div className="space-y-4">
       {/* Header stats */}
-      <div className="flex justify-between items-center p-4 bg-card rounded-xl border border-border">
-        <div className="flex gap-6">
+      <div className="flex justify-between items-center p-4 border-4 border-primary bg-card">
+        <div className="flex gap-6 font-pixel">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{state.shooterScore}</div>
-            <div className="text-xs text-muted-foreground">Score</div>
+            <div className="text-2xl text-primary neon-glow">{state.shooterScore}</div>
+            <div className="text-xs text-muted-foreground">SCORE</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-400">{state.bloatwareDestroyed}</div>
-            <div className="text-xs text-muted-foreground">Destroyed</div>
+            <div className="text-2xl text-destructive">{state.bloatwareDestroyed}</div>
+            <div className="text-xs text-muted-foreground">DESTROYED</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-400">{timeLeft}s</div>
-            <div className="text-xs text-muted-foreground">Time Left</div>
+            <div className={`text-2xl ${timeLeft <= 5 ? 'text-destructive animate-pulse' : 'text-neon-yellow'}`}>
+              {timeLeft}s
+            </div>
+            <div className="text-xs text-muted-foreground">TIME</div>
           </div>
+          {combo > 2 && (
+            <motion.div 
+              className="text-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              key={combo}
+            >
+              <div className="text-2xl text-secondary neon-glow-pink">{combo}x</div>
+              <div className="text-xs text-muted-foreground">COMBO</div>
+            </motion.div>
+          )}
         </div>
       </div>
 
       {/* Installation progress */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">🐧 Installing Linux...</span>
-          <span className="text-primary font-bold">{Math.round(progress)}%</span>
+        <div className="flex justify-between text-sm font-pixel">
+          <span className="text-muted-foreground">🐧 INSTALLING LINUX...</span>
+          <span className="text-primary neon-glow">{Math.round(progress)}%</span>
         </div>
-        <div className="h-4 bg-muted rounded-full overflow-hidden">
+        <div className="h-4 bg-muted border-2 border-primary overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-green-400"
+            className="h-full bg-primary"
             style={{ width: `${progress}%` }}
             transition={{ duration: 0.1 }}
           />
@@ -161,30 +183,23 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
       {/* Game area */}
       <div
         ref={gameAreaRef}
-        className="relative h-96 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 rounded-2xl overflow-hidden border-2 border-primary/30 cursor-crosshair"
+        className="relative h-96 bg-background border-4 border-primary overflow-hidden cursor-crosshair scanline"
       >
-        {/* Scanlines effect */}
-        <div className="absolute inset-0 pointer-events-none opacity-10">
-          <div className="h-full w-full" style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
-          }} />
-        </div>
-
         {/* Instructions */}
         {!isComplete && bloatwares.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-center">
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground font-pixel">
               <span className="text-4xl block mb-2">🎯</span>
-              <p>Click the falling bloatware to destroy it!</p>
-              <p className="text-sm">Don't let them reach the hard drive!</p>
+              <p>CLICK THE BLOATWARE!</p>
+              <p className="text-sm">DON'T LET THEM REACH THE DRIVE!</p>
             </div>
           </div>
         )}
 
         {/* Hard drive target area */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-primary/30 to-transparent flex items-end justify-center pb-2">
-          <div className="px-4 py-1 bg-slate-800 rounded border border-slate-600 text-xs text-slate-400">
-            💾 Hard Drive - Protect me!
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-primary/20 flex items-end justify-center pb-2">
+          <div className="px-4 py-1 bg-card border-2 border-primary text-xs text-primary font-pixel">
+            💾 HARD DRIVE - PROTECT ME!
           </div>
         </div>
 
@@ -206,7 +221,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
               whileTap={{ scale: 0.8 }}
             >
               <span className="drop-shadow-lg filter">{bloatware.icon}</span>
-              <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-red-400 font-bold whitespace-nowrap">
+              <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-secondary font-pixel whitespace-nowrap">
                 +{bloatware.points}
               </span>
             </motion.button>
@@ -237,7 +252,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-background/80 flex items-center justify-center flex-col"
+            className="absolute inset-0 bg-background/90 flex items-center justify-center flex-col"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -246,34 +261,31 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
               className="text-center"
             >
               <span className="text-6xl">🎉</span>
-              <h3 className="text-2xl font-bold text-foreground mt-4">Installation Complete!</h3>
-              <p className="text-muted-foreground mt-2">
-                You destroyed {state.bloatwareDestroyed} bloatware threats!
+              <h3 className="text-2xl text-primary neon-glow mt-4 font-pixel">INSTALLATION COMPLETE!</h3>
+              <p className="text-muted-foreground mt-2 font-pixel">
+                YOU DESTROYED {state.bloatwareDestroyed} THREATS!
               </p>
-              <p className="text-lg font-bold text-primary mt-2">
-                +{state.shooterScore} points
+              <p className="text-lg text-secondary neon-glow-pink mt-2 font-pixel">
+                +{state.shooterScore} POINTS
               </p>
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+              <Button
                 onClick={onComplete}
-                className="mt-6 px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors"
+                className="pixel-button mt-6"
               >
-                Continue →
-              </motion.button>
+                CONTINUE →
+              </Button>
             </motion.div>
           </motion.div>
         )}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 justify-center">
+      <div className="flex flex-wrap gap-3 justify-center font-pixel">
         {bloatwareTypes.map(type => (
           <div key={type.type} className="flex items-center gap-1 text-xs text-muted-foreground">
             <span>{type.icon}</span>
             <span>{type.name}</span>
-            <span className="text-primary">+{type.points}</span>
+            <span className="text-secondary">+{type.points}</span>
           </div>
         ))}
       </div>

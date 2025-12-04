@@ -1,61 +1,50 @@
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
 
 interface ProgressBarProps {
   currentStep: number;
   totalSteps: number;
-  labels?: string[];
 }
 
-export function ProgressBar({ currentStep, totalSteps, labels }: ProgressBarProps) {
-  const defaultLabels = ['Start', 'Machine', 'Repair', 'OS', 'Customize', 'Results'];
-  const stepLabels = labels || defaultLabels;
+const stepLabels = ['MODE', 'MAP', 'INSPECT', 'BUILD', 'OS', 'INSTALL', 'CONFIG', 'DONE'];
 
+export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8">
-      <div className="relative flex items-center justify-between">
-        {/* Background line */}
-        <div className="absolute left-0 right-0 top-1/2 h-1 bg-muted -translate-y-1/2 rounded-full" />
-        
-        {/* Progress line */}
+    <div className="mb-8">
+      {/* Step indicators */}
+      <div className="flex justify-between mb-2">
+        {stepLabels.slice(0, totalSteps).map((label, index) => (
+          <div key={label} className="flex flex-col items-center">
+            <motion.div
+              className={`w-8 h-8 border-2 flex items-center justify-center text-xs font-pixel ${
+                index < currentStep
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : index === currentStep
+                  ? 'border-primary text-primary animate-pulse'
+                  : 'border-muted text-muted-foreground'
+              }`}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: index === currentStep ? 1.1 : 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {index < currentStep ? '✓' : index + 1}
+            </motion.div>
+            <span className={`text-xs mt-1 font-pixel hidden md:block ${
+              index <= currentStep ? 'text-primary' : 'text-muted-foreground'
+            }`}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2 bg-muted border-2 border-primary overflow-hidden">
         <motion.div
-          className="absolute left-0 top-1/2 h-1 gradient-hero -translate-y-1/2 rounded-full"
-          initial={{ width: '0%' }}
+          className="h-full bg-primary"
+          initial={{ width: 0 }}
           animate={{ width: `${(currentStep / (totalSteps - 1)) * 100}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
-
-        {/* Steps */}
-        {stepLabels.slice(0, totalSteps).map((label, index) => {
-          const isCompleted = index < currentStep;
-          const isCurrent = index === currentStep;
-
-          return (
-            <div key={index} className="relative z-10 flex flex-col items-center">
-              <motion.div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                  isCompleted
-                    ? 'gradient-hero text-primary-foreground'
-                    : isCurrent
-                    ? 'bg-card border-2 border-primary text-primary shadow-lg'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-                initial={{ scale: 0.8 }}
-                animate={{ scale: isCurrent ? 1.1 : 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isCompleted ? <Check className="w-5 h-5" /> : index + 1}
-              </motion.div>
-              <span
-                className={`mt-2 text-xs font-medium transition-colors ${
-                  isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                }`}
-              >
-                {label}
-              </span>
-            </div>
-          );
-        })}
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ interface WorkbenchProps {
 }
 
 export function Workbench({ onComplete }: WorkbenchProps) {
-  const { state, placeComponent, addMistake, spendBudget } = useGame();
+  const { state, placeComponent, addMistake, spendBudget, incrementCombo, resetCombo } = useGame();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
@@ -36,6 +36,7 @@ export function Workbench({ onComplete }: WorkbenchProps) {
   );
 
   const isComplete = Object.keys(state.placedComponents).length >= 3;
+  const showTechnical = state.difficultyMode === 'technical';
 
   const handleDragStart = useCallback((componentId: string) => {
     setDraggedItem(componentId);
@@ -52,9 +53,8 @@ export function Workbench({ onComplete }: WorkbenchProps) {
     const component = state.availableComponents.find(c => c.id === draggedItem);
     if (!component) return;
 
-    // Check budget
     if (!spendBudget(component.cost)) {
-      setFeedback({ type: 'error', message: 'Not enough budget! 💸' });
+      setFeedback({ type: 'error', message: 'NOT ENOUGH BUDGET! 💸' });
       toast.error('Not enough budget for this component!');
       setTimeout(() => setFeedback(null), 2000);
       return;
@@ -63,18 +63,20 @@ export function Workbench({ onComplete }: WorkbenchProps) {
     const success = placeComponent(draggedItem, slotId);
     
     if (success) {
-      setFeedback({ type: 'success', message: `${component.name} installed! ✨` });
+      setFeedback({ type: 'success', message: `${component.name} INSTALLED! ✨` });
       toast.success(`${component.name} installed correctly!`);
+      incrementCombo();
     } else {
       addMistake();
-      setFeedback({ type: 'error', message: 'Wrong slot! Try again! ⚡' });
+      resetCombo();
+      setFeedback({ type: 'error', message: 'WRONG SLOT! TRY AGAIN! ⚡' });
       toast.error("That doesn't go there! Try another slot.");
     }
     
     setTimeout(() => setFeedback(null), 2000);
     setDraggedItem(null);
     setHoveredSlot(null);
-  }, [draggedItem, state.availableComponents, placeComponent, addMistake, spendBudget]);
+  }, [draggedItem, state.availableComponents, placeComponent, addMistake, spendBudget, incrementCombo, resetCombo]);
 
   const getSlotComponent = (slotId: string) => {
     const componentId = state.placedComponents[slotId];
@@ -84,22 +86,30 @@ export function Workbench({ onComplete }: WorkbenchProps) {
   return (
     <div className="space-y-6">
       {/* Stats bar */}
-      <div className="flex justify-between items-center p-4 bg-card rounded-xl border border-border">
-        <div className="flex gap-6">
+      <div className="flex justify-between items-center p-4 border-4 border-primary bg-card">
+        <div className="flex gap-6 font-pixel">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">€{state.budget}</div>
-            <div className="text-xs text-muted-foreground">Budget</div>
+            <div className="text-2xl text-neon-yellow">€{state.budget}</div>
+            <div className="text-xs text-muted-foreground">BUDGET</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-400">{state.workbenchMistakes}</div>
-            <div className="text-xs text-muted-foreground">Mistakes</div>
+            <div className={`text-2xl ${state.workbenchMistakes > 0 ? 'text-destructive' : 'text-primary'}`}>
+              {state.workbenchMistakes}
+            </div>
+            <div className="text-xs text-muted-foreground">MISTAKES</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-400">
+            <div className="text-2xl text-primary neon-glow">
               {Object.keys(state.placedComponents).length}/3
             </div>
-            <div className="text-xs text-muted-foreground">Installed</div>
+            <div className="text-xs text-muted-foreground">INSTALLED</div>
           </div>
+          {state.currentCombo > 1 && (
+            <div className="text-center">
+              <div className="text-2xl text-secondary neon-glow-pink">{state.currentCombo}x</div>
+              <div className="text-xs text-muted-foreground">COMBO</div>
+            </div>
+          )}
         </div>
         
         {isComplete && (
@@ -107,9 +117,9 @@ export function Workbench({ onComplete }: WorkbenchProps) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             onClick={onComplete}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors"
+            className="pixel-button"
           >
-            Continue →
+            CONTINUE →
           </motion.button>
         )}
       </div>
@@ -121,10 +131,10 @@ export function Workbench({ onComplete }: WorkbenchProps) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`p-4 rounded-xl text-center font-bold ${
+            className={`p-4 text-center font-pixel border-4 ${
               feedback.type === 'success' 
-                ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
-                : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                ? 'bg-primary/20 text-primary border-primary' 
+                : 'bg-destructive/20 text-destructive border-destructive'
             }`}
           >
             {feedback.type === 'success' ? <CheckCircle2 className="inline w-5 h-5 mr-2" /> : <AlertTriangle className="inline w-5 h-5 mr-2" />}
@@ -135,13 +145,13 @@ export function Workbench({ onComplete }: WorkbenchProps) {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Motherboard */}
-        <div className="relative aspect-square bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border-4 border-slate-600 overflow-hidden">
+        <div className="relative aspect-square bg-card border-4 border-primary overflow-hidden">
           {/* Circuit pattern */}
           <div className="absolute inset-0 opacity-20">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
               <pattern id="circuit" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M0 20h40M20 0v40" stroke="#4ade80" strokeWidth="0.5" fill="none"/>
-                <circle cx="20" cy="20" r="2" fill="#4ade80"/>
+                <path d="M0 20h40M20 0v40" stroke="hsl(120 100% 50%)" strokeWidth="0.5" fill="none"/>
+                <circle cx="20" cy="20" r="2" fill="hsl(120 100% 50%)"/>
               </pattern>
               <rect width="100%" height="100%" fill="url(#circuit)"/>
             </svg>
@@ -155,12 +165,12 @@ export function Workbench({ onComplete }: WorkbenchProps) {
             return (
               <motion.div
                 key={slot.id}
-                className={`absolute rounded-lg border-2 transition-all flex items-center justify-center ${
+                className={`absolute border-2 transition-all flex items-center justify-center ${
                   placedComponent
                     ? 'bg-primary/30 border-primary'
                     : isHovered
-                    ? 'bg-yellow-500/30 border-yellow-500 scale-110'
-                    : 'bg-slate-700/50 border-slate-500 border-dashed'
+                    ? 'bg-secondary/30 border-secondary scale-110'
+                    : 'bg-muted/30 border-muted border-dashed'
                 }`}
                 style={{
                   left: `${slot.x}%`,
@@ -182,23 +192,26 @@ export function Workbench({ onComplete }: WorkbenchProps) {
                 {placedComponent ? (
                   <span className="text-2xl">{placedComponent.icon}</span>
                 ) : (
-                  <span className="text-[10px] text-slate-400 text-center px-1">{slot.name}</span>
+                  <span className="text-[10px] text-muted-foreground text-center px-1 font-pixel">{slot.name}</span>
                 )}
               </motion.div>
             );
           })}
 
           {/* Central chip decoration */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-slate-700 rounded border-2 border-slate-500 flex items-center justify-center">
-            <span className="text-xs text-slate-400 font-mono">CPU</span>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-muted border-2 border-primary flex items-center justify-center">
+            <span className="text-xs text-primary font-pixel">CPU</span>
           </div>
         </div>
 
         {/* Inventory */}
         <div className="space-y-4">
-          <h3 className="text-lg font-bold text-foreground">🧰 Component Inventory</h3>
-          <p className="text-sm text-muted-foreground">
-            Drag components to the correct slots on the motherboard. Install at least 3 to continue!
+          <h3 className="text-lg text-primary font-pixel neon-glow">🧰 INVENTORY</h3>
+          <p className="text-sm text-muted-foreground font-pixel">
+            {showTechnical 
+              ? 'Match component form factors to correct slots. DDR4→DIMM, SATA→Storage, PCIe→Expansion'
+              : 'Drag components to the correct slots on the motherboard. Install at least 3 to continue!'
+            }
           </p>
           
           <div className="grid grid-cols-2 gap-3">
@@ -208,28 +221,31 @@ export function Workbench({ onComplete }: WorkbenchProps) {
                 draggable
                 onDragStart={() => handleDragStart(component.id)}
                 onDragEnd={handleDragEnd}
-                className={`p-4 rounded-xl bg-card border-2 border-border cursor-grab active:cursor-grabbing transition-all ${
-                  draggedItem === component.id ? 'opacity-50 scale-95' : 'hover:border-primary hover:shadow-lg'
+                className={`p-4 border-4 bg-card cursor-grab active:cursor-grabbing transition-all ${
+                  draggedItem === component.id 
+                    ? 'opacity-50 scale-95 border-muted' 
+                    : 'border-muted hover:border-primary'
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <div className="text-3xl mb-2">{component.icon}</div>
-                <div className="font-bold text-foreground text-sm">{component.name}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  💰 €{component.cost}
-                </div>
-                <div className="text-xs text-green-400 mt-1">
-                  🌱 -{component.impact.environmental}kg CO₂
-                </div>
+                <div className="text-foreground text-sm font-pixel">{component.name}</div>
+                <div className="text-xs text-neon-yellow font-pixel mt-1">💰 €{component.cost}</div>
+                <div className="text-xs text-primary font-pixel mt-1">🌱 -{component.impact.environmental}kg CO₂</div>
+                {showTechnical && component.technicalInfo && (
+                  <div className="text-[10px] text-muted-foreground font-pixel mt-2 leading-tight">
+                    {component.technicalInfo}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
 
           {availableItems.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground font-pixel">
               <span className="text-4xl">✅</span>
-              <p className="mt-2">All components placed!</p>
+              <p className="mt-2">ALL COMPONENTS PLACED!</p>
             </div>
           )}
         </div>
