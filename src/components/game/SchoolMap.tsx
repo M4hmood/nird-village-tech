@@ -26,13 +26,12 @@ function RoomCard({ room, isUnlocked, onClick, showTechnical }: RoomCardProps) {
     <motion.button
       onClick={onClick}
       disabled={!isUnlocked}
-      className={`relative p-6 border-4 transition-all text-left ${
-        room.completed
-          ? 'border-primary bg-primary/20'
-          : isUnlocked
+      className={`relative p-6 border-4 transition-all text-left ${room.completed
+        ? 'border-primary bg-primary/20'
+        : isUnlocked
           ? 'border-muted bg-card hover:border-primary hover:shadow-neon cursor-pointer'
           : 'border-muted/50 bg-card/50 cursor-not-allowed opacity-60'
-      }`}
+        }`}
       whileHover={isUnlocked && !room.completed ? { scale: 1.02, y: -4 } : {}}
       whileTap={isUnlocked ? { scale: 0.98 } : {}}
     >
@@ -46,7 +45,7 @@ function RoomCard({ room, isUnlocked, onClick, showTechnical }: RoomCardProps) {
           <CheckCircle2 className="w-5 h-5 text-primary-foreground" />
         </motion.div>
       )}
-      
+
       {/* Lock icon for locked rooms */}
       {!isUnlocked && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/70">
@@ -55,7 +54,7 @@ function RoomCard({ room, isUnlocked, onClick, showTechnical }: RoomCardProps) {
       )}
 
       <div className="flex items-start gap-4">
-        <motion.span 
+        <motion.span
           className="text-4xl"
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 2, repeat: Infinity, delay: Math.random() }}
@@ -67,27 +66,26 @@ function RoomCard({ room, isUnlocked, onClick, showTechnical }: RoomCardProps) {
           <p className="text-sm text-muted-foreground font-pixel mt-1">
             {showTechnical ? room.technicalDescription : room.description}
           </p>
-          
+
           <div className="flex items-center gap-3 mt-3 flex-wrap">
             {/* Difficulty stars */}
             <div className="flex gap-0.5">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
-                    i < difficultyStars[room.difficulty]
-                      ? 'fill-neon-yellow text-neon-yellow'
-                      : 'text-muted'
-                  }`}
+                  className={`w-4 h-4 ${i < difficultyStars[room.difficulty]
+                    ? 'fill-neon-yellow text-neon-yellow'
+                    : 'text-muted'
+                    }`}
                 />
               ))}
             </div>
-            
+
             {/* Difficulty badge */}
             <span className={`text-xs px-2 py-0.5 border-2 font-pixel uppercase ${difficultyColors[room.difficulty]}`}>
               {room.difficulty}
             </span>
-            
+
             {/* Machine count */}
             <span className="text-xs text-muted-foreground font-pixel">
               🖥️ {room.machines}
@@ -115,10 +113,10 @@ interface SchoolMapProps {
 
 export function SchoolMap({ onSelectRoom }: SchoolMapProps) {
   const { state } = useGame();
-  
+
   const completedCount = state.rooms.filter(r => r.completed).length;
   const showTechnical = state.difficultyMode === 'technical';
-  
+
   // Unlock logic: first room always unlocked, subsequent rooms unlock after previous completion
   const isUnlocked = (index: number) => {
     if (index === 0) return true;
@@ -136,14 +134,14 @@ export function SchoolMap({ onSelectRoom }: SchoolMapProps) {
         >
           🏫
         </motion.div>
-        <h2 className="text-2xl text-primary neon-glow">SCHOOL MAP</h2>
+        <h2 className="text-2xl text-primary neon-glow">VILLAGE MAP</h2>
         <p className="text-muted-foreground font-pixel mt-2">
-          {showTechnical 
+          {showTechnical
             ? 'Select deployment zone. Check hardware specs before proceeding.'
-            : 'Choose a room to liberate from Big Tech!'
+            : 'Choose a sector to liberate from the Big Tech Empire!'
           }
         </p>
-        
+
         {/* Progress indicator */}
         <div className="mt-4 flex items-center justify-center gap-2">
           <div className="h-3 w-48 bg-muted border-2 border-primary overflow-hidden">
@@ -185,9 +183,9 @@ export function SchoolMap({ onSelectRoom }: SchoolMapProps) {
             SCHOOL LIBERATED!
           </h3>
           <p className="text-muted-foreground font-pixel">
-            {showTechnical 
+            {showTechnical
               ? 'All systems migrated to FOSS stack. Network sovereignty achieved.'
-              : 'Every room is now running open-source software!'
+              : 'The Village is free! You have defeated the digital Goliath!'
             }
           </p>
         </motion.div>

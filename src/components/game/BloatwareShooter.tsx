@@ -14,11 +14,11 @@ interface Bloatware {
 }
 
 const bloatwareTypes = [
-  { type: 'telemetry', icon: '👁️', name: 'Telemetry', points: 10 },
-  { type: 'ads', icon: '📢', name: 'Ads', points: 15 },
-  { type: 'updates', icon: '🔄', name: 'Forced Updates', points: 20 },
-  { type: 'bloat', icon: '💩', name: 'Bloatware', points: 25 },
-  { type: 'tracker', icon: '🎯', name: 'Tracker', points: 30 },
+  { type: 'telemetry', icon: '👁️', name: 'Telemetry', points: 1 },
+  { type: 'ads', icon: '📢', name: 'Ads', points: 2 },
+  { type: 'updates', icon: '🔄', name: 'Forced Updates', points: 3 },
+  { type: 'bloat', icon: '💩', name: 'Bloatware', points: 3 },
+  { type: 'tracker', icon: '🎯', name: 'Tracker', points: 4 },
 ];
 
 interface BloatwareShooterProps {
@@ -41,7 +41,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
   // Spawn bloatware
   useEffect(() => {
     if (isComplete) return;
-    
+
     const spawnInterval = setInterval(() => {
       const type = bloatwareTypes[Math.floor(Math.random() * bloatwareTypes.length)];
       const newBloatware: Bloatware = {
@@ -62,7 +62,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
   // Move bloatwares down
   useEffect(() => {
     if (isComplete) return;
-    
+
     const moveInterval = setInterval(() => {
       setBloatwares(prev => {
         const updated = prev
@@ -78,7 +78,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
   // Progress bar (installation)
   useEffect(() => {
     if (isComplete) return;
-    
+
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -98,7 +98,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
   // Timer
   useEffect(() => {
     if (isComplete || timeLeft <= 0) return;
-    
+
     const timer = setInterval(() => {
       setTimeLeft(prev => Math.max(0, prev - 1));
     }, 1000);
@@ -114,7 +114,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
     destroyBloatware();
     hitCount.current++;
     setCombo(c => c + 1);
-    
+
     // Add hit effect
     setHitEffects(prev => [...prev, { id, x, y }]);
     setTimeout(() => {
@@ -152,7 +152,7 @@ export function BloatwareShooter({ onComplete, duration = 20 }: BloatwareShooter
             <div className="text-xs text-muted-foreground">TIME</div>
           </div>
           {combo > 2 && (
-            <motion.div 
+            <motion.div
               className="text-center"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}

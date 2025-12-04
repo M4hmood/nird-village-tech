@@ -109,6 +109,7 @@ export interface GameState {
   totalCarbonSaved: number;
   totalMoneySaved: number;
   totalMachinesFixed: number;
+  showLevelUp: boolean;
 }
 
 interface GameContextType {
@@ -147,70 +148,71 @@ interface GameContextType {
   addXP: (amount: number) => void;
   // Calculations
   calculateSavings: () => { carbon: number; money: number };
+  dismissLevelUp: () => void;
 }
 
 const initialRooms: Room[] = [
-  { 
-    id: 'library', 
-    name: 'Library', 
-    icon: '📚', 
-    difficulty: 'easy', 
+  {
+    id: 'library',
+    name: 'Library',
+    icon: '📚',
+    difficulty: 'easy',
     description: 'Fix 3 web-browsing PCs for quiet study',
     technicalDescription: 'Deploy lightweight Linux distros with minimal RAM usage (<512MB). Configure restricted browser kiosk mode.',
-    requiredDistro: ['Endless OS', 'Linux Mint'], 
-    completed: false, 
+    requiredDistro: ['Endless OS', 'Linux Mint'],
+    completed: false,
     machines: 3,
     modes: ['story', 'arcade'],
     highScores: { story: 0, arcade: 0, challenge: 0 }
   },
-  { 
-    id: 'classroom', 
-    name: 'Classroom', 
-    icon: '🏫', 
-    difficulty: 'easy', 
+  {
+    id: 'classroom',
+    name: 'Classroom',
+    icon: '🏫',
+    difficulty: 'easy',
     description: 'Set up student workstations',
     technicalDescription: 'Install educational software stack. Configure user permissions and parental controls via PAM.',
-    requiredDistro: ['Linux Mint', 'Ubuntu LTS'], 
-    completed: false, 
+    requiredDistro: ['Linux Mint', 'Ubuntu LTS'],
+    completed: false,
     machines: 4,
     modes: ['story', 'arcade', 'challenge'],
     highScores: { story: 0, arcade: 0, challenge: 0 }
   },
-  { 
-    id: 'admin', 
-    name: 'Admin Office', 
-    icon: '🗄️', 
-    difficulty: 'medium', 
+  {
+    id: 'admin',
+    name: 'Admin Office',
+    icon: '🗄️',
+    difficulty: 'medium',
     description: 'Secure systems for school records',
     technicalDescription: 'Full disk encryption with LUKS. Configure AppArmor profiles. Set up automated backups via rsync.',
-    requiredDistro: ['Debian'], 
-    completed: false, 
+    requiredDistro: ['Debian'],
+    completed: false,
     machines: 2,
     modes: ['story', 'challenge'],
     highScores: { story: 0, arcade: 0, challenge: 0 }
   },
-  { 
-    id: 'teachers', 
-    name: 'Teachers Lounge', 
-    icon: '☕', 
-    difficulty: 'medium', 
+  {
+    id: 'teachers',
+    name: 'Teachers Lounge',
+    icon: '☕',
+    difficulty: 'medium',
     description: 'Multimedia stations for lesson prep',
     technicalDescription: 'Configure PulseAudio for multimedia. Install codec packs. Set up network shares via Samba.',
-    requiredDistro: ['Ubuntu LTS'], 
-    completed: false, 
+    requiredDistro: ['Ubuntu LTS'],
+    completed: false,
     machines: 3,
     modes: ['story', 'arcade'],
     highScores: { story: 0, arcade: 0, challenge: 0 }
   },
-  { 
-    id: 'lab', 
-    name: 'Computer Lab', 
-    icon: '🔬', 
-    difficulty: 'hard', 
+  {
+    id: 'lab',
+    name: 'Computer Lab',
+    icon: '🔬',
+    difficulty: 'hard',
     description: 'High-performance machines for coding',
     technicalDescription: 'Compile custom kernel for hardware optimization. Configure Docker environments. Set up IDE with LSP servers.',
-    requiredDistro: ['Arch Linux', 'Ubuntu LTS'], 
-    completed: false, 
+    requiredDistro: ['Arch Linux', 'Ubuntu LTS'],
+    completed: false,
     machines: 5,
     modes: ['story', 'arcade', 'challenge'],
     highScores: { story: 0, arcade: 0, challenge: 0 }
@@ -218,55 +220,55 @@ const initialRooms: Room[] = [
 ];
 
 const initialComponents: RepairComponent[] = [
-  { 
-    id: 'ram', 
-    name: 'RAM Stick', 
-    icon: '🧠', 
-    targetSlot: 'ram-slot', 
-    cost: 30, 
+  {
+    id: 'ram',
+    name: 'RAM Stick',
+    icon: '🧠',
+    targetSlot: 'ram-slot',
+    cost: 30,
     description: 'More memory = more tabs!',
     technicalInfo: 'DDR4-3200 8GB DIMM. Install in paired slots for dual-channel. Check ECC compatibility.',
-    impact: { environmental: 15, money: 30, lifespan: 2 } 
+    impact: { environmental: 15, money: 30, lifespan: 2 }
   },
-  { 
-    id: 'ssd', 
-    name: 'SSD Drive', 
-    icon: '💾', 
-    targetSlot: 'storage-slot', 
-    cost: 50, 
+  {
+    id: 'ssd',
+    name: 'SSD Drive',
+    icon: '💾',
+    targetSlot: 'storage-slot',
+    cost: 50,
     description: 'Super fast storage!',
     technicalInfo: 'SATA III 256GB SSD. Sequential read: 550MB/s. Enable TRIM via fstrim.timer.',
-    impact: { environmental: 20, money: 50, lifespan: 3 } 
+    impact: { environmental: 20, money: 50, lifespan: 3 }
   },
-  { 
-    id: 'thermal', 
-    name: 'Thermal Paste', 
-    icon: '🌡️', 
-    targetSlot: 'cpu-slot', 
-    cost: 5, 
+  {
+    id: 'thermal',
+    name: 'Thermal Paste',
+    icon: '🌡️',
+    targetSlot: 'cpu-slot',
+    cost: 5,
     description: 'Keeps the CPU cool',
     technicalInfo: 'Arctic MX-4 compound. Apply pea-sized amount. Clean old paste with isopropyl alcohol.',
-    impact: { environmental: 5, money: 5, lifespan: 1 } 
+    impact: { environmental: 5, money: 5, lifespan: 1 }
   },
-  { 
-    id: 'wifi', 
-    name: 'WiFi Card', 
-    icon: '📶', 
-    targetSlot: 'pcie-slot', 
-    cost: 15, 
+  {
+    id: 'wifi',
+    name: 'WiFi Card',
+    icon: '📶',
+    targetSlot: 'pcie-slot',
+    cost: 15,
     description: 'Wireless connectivity',
     technicalInfo: 'Intel AX200 WiFi 6. Check kernel module: iwlwifi. May need firmware from linux-firmware.',
-    impact: { environmental: 10, money: 15, lifespan: 2 } 
+    impact: { environmental: 10, money: 15, lifespan: 2 }
   },
-  { 
-    id: 'battery', 
-    name: 'New Battery', 
-    icon: '🔋', 
-    targetSlot: 'battery-slot', 
-    cost: 40, 
+  {
+    id: 'battery',
+    name: 'New Battery',
+    icon: '🔋',
+    targetSlot: 'battery-slot',
+    cost: 40,
     description: 'Hours of unplugged use',
     technicalInfo: '6-cell Li-ion 4400mAh. Calibrate with full discharge cycle. Check tlp for power management.',
-    impact: { environmental: 25, money: 40, lifespan: 2 } 
+    impact: { environmental: 25, money: 40, lifespan: 2 }
   },
 ];
 
@@ -355,6 +357,7 @@ const initialState: GameState = {
   totalCarbonSaved: 0,
   totalMoneySaved: 0,
   totalMachinesFixed: 0,
+  showLevelUp: false,
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -414,6 +417,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       resistanceScore: prev.resistanceScore + 50,
       totalMachinesFixed: prev.totalMachinesFixed + 1,
     }));
+    addXP(500);
   };
 
   const startChallenge = (challengeId: string) => {
@@ -424,12 +428,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setState(prev => {
       const challenge = prev.challenges.find(c => c.id === challengeId);
       const isNewComplete = challenge && score >= challenge.targetScore && !challenge.completed;
-      
+
       return {
         ...prev,
-        challenges: prev.challenges.map(c => 
-          c.id === challengeId && score >= c.targetScore 
-            ? { ...c, completed: true } 
+        challenges: prev.challenges.map(c =>
+          c.id === challengeId && score >= c.targetScore
+            ? { ...c, completed: true }
             : c
         ),
         totalXP: isNewComplete ? prev.totalXP + (challenge?.reward || 0) : prev.totalXP,
@@ -441,9 +445,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const placeComponent = (componentId: string, slotId: string): boolean => {
     const component = state.availableComponents.find(c => c.id === componentId);
     if (!component) return false;
-    
+
     const isCorrect = component.targetSlot === slotId;
-    
+
     if (isCorrect) {
       setState(prev => {
         const newPlaced = { ...prev.placedComponents, [slotId]: componentId };
@@ -463,6 +467,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           totalMoneySaved: prev.totalMoneySaved + (600 - component.cost),
         };
       });
+      addXP(10);
       return true;
     }
     return false;
@@ -477,8 +482,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const addMistake = () => {
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       workbenchMistakes: prev.workbenchMistakes + 1,
       currentCombo: 0,
     }));
@@ -505,13 +510,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const destroyBloatware = () => {
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       bloatwareDestroyed: prev.bloatwareDestroyed + 1,
       resistanceScore: prev.resistanceScore + 5,
       currentCombo: prev.currentCombo + 1,
       maxCombo: Math.max(prev.maxCombo, prev.currentCombo + 1),
     }));
+    addXP(5);
   };
 
   const addPerfectInstall = () => {
@@ -547,8 +553,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         totalXP: newXP,
         playerLevel: newLevel,
         xpToNextLevel: newXPToNext,
+        showLevelUp: (newLevel > prev.playerLevel) || prev.showLevelUp,
       };
     });
+  };
+
+  const dismissLevelUp = () => {
+    setState(prev => ({ ...prev, showLevelUp: false }));
   };
 
   const calculateSavings = () => {
@@ -595,6 +606,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         resetCombo,
         addXP,
         calculateSavings,
+        dismissLevelUp,
       }}
     >
       {children}

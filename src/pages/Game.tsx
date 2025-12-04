@@ -11,6 +11,7 @@ import { ScoreDisplay } from '@/components/game/ScoreDisplay';
 import { ResourceDisplay } from '@/components/game/ResourceDisplay';
 import { ChallengeMode } from '@/components/game/ChallengeMode';
 import { ArcadeMode } from '@/components/game/ArcadeMode';
+import { LevelUpToast } from '@/components/game/LevelUpToast';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -41,13 +42,13 @@ const phaseSteps: Record<string, number> = {
 };
 
 export default function Game() {
-  const { 
-    state, 
-    setPhase, 
-    selectMachine, 
+  const {
+    state,
+    setPhase,
+    selectMachine,
     selectRoom,
-    selectOS, 
-    setCustomizations, 
+    selectOS,
+    setCustomizations,
     resetGame,
     completeRoom,
     calculateSavings,
@@ -60,44 +61,44 @@ export default function Game() {
   const getMentorMessage = () => {
     const messages: Record<string, { simple: string; technical: string }> = {
       'mode-select': {
-        simple: "Hey there, tech hero! 🎮 Ready to save some computers? Pick your style!",
-        technical: "Welcome, technician. Select your expertise level and preferred game mode to begin system recovery operations.",
+        simple: "Welcome to the Resistance! ✊ The Village needs you to fight back against the Big Tech Empire!",
+        technical: "Technician, the Village infrastructure is compromised by proprietary bloatware. Initiate liberation protocols.",
       },
       map: {
-        simple: "Welcome to the school! 🏫 Each room needs your help. Which one first?",
-        technical: "School network topology loaded. Select a deployment zone. Each zone has specific hardware requirements and distro compatibility.",
+        simple: "The Empire is everywhere! 🏰 Choose a sector to liberate. We need to reclaim our digital independence!",
+        technical: "Network topology analysis complete. Multiple sectors under proprietary lock-in. Select a target for open-source deployment.",
       },
       inspect: {
-        simple: "Let's check this computer! 🔍 See what's broken before we fix it.",
-        technical: "Running hardware diagnostics. Check lspci, lsusb, and dmesg outputs to identify failing components.",
+        simple: "Let's see what damage the Empire has done... 🔍 We need to replace their junk with sustainable tech!",
+        technical: "Diagnostic scan initiated. Identifying proprietary hardware locks and planned obsolescence markers.",
       },
       workbench: {
-        simple: "Time for repairs! 🔧 Drag parts to the right spots. Don't mix them up!",
-        technical: "Component installation phase. Match form factors: DDR4 to DIMM slots, SATA to storage bay, M.2 to NVMe slot.",
+        simple: "Repair, don't replace! 🔧 Every component saved is a blow to the Empire's waste machine.",
+        technical: "Hardware refurbishment phase. Maximize component lifespan to reduce e-waste and carbon footprint.",
       },
       os: {
-        simple: "Hardware ready! 🐧 Pick the best Linux for this room.",
-        technical: "Storage formatted. Select appropriate distro based on use case, hardware specs, and maintenance requirements.",
+        simple: "Time to break the chains! 🐧 Install a free operating system to give power back to the people.",
+        technical: "Storage wiped. Deploying FOSS operating system to ensure data sovereignty and user autonomy.",
       },
       shooter: {
-        simple: "Installing Linux... but watch out! 👾 Big Tech bloatware incoming!",
-        technical: "Package installation in progress. Intercept and terminate proprietary telemetry and adware processes.",
+        simple: "They're trying to track us! 👾 Blast that telemetry and bloatware! For privacy!",
+        technical: "Intrusion detected. Intercepting proprietary telemetry packets and neutralizing adware daemons.",
       },
       customize: {
-        simple: "Almost done! 🎨 Make it look cool and add the right apps.",
-        technical: "Post-install configuration. Set DE theme, install flatpaks from approved repos, configure PAM and polkit rules.",
+        simple: "Make it accessible for everyone! 🎨 A true Village leaves no one behind.",
+        technical: "Configuration phase. optimizing UX for inclusivity and ensuring compliance with RGAA/WCAG standards.",
       },
       result: {
-        simple: "Mission complete! 🎉 You saved another computer from the junkyard!",
-        technical: "Deployment successful. System metrics logged. Environmental impact calculated based on lifecycle analysis.",
+        simple: "Victory! 🎉 Another computer liberated! The Village grows stronger thanks to you!",
+        technical: "System liberation successful. Metrics confirmed: Reduced carbon footprint, increased autonomy, zero proprietary dependencies.",
       },
       challenge: {
-        simple: "Challenge time! 🏆 Show off your skills!",
-        technical: "Challenge mode engaged. Performance metrics will be recorded and compared against baseline benchmarks.",
+        simple: "Prove your worth to the Resistance! 🏆 Show the Empire what a NIRD expert can do!",
+        technical: "Advanced simulation engaged. Testing capabilities under high-pressure scenarios. Efficiency is paramount.",
       },
     };
     const phase = state.currentPhase;
-    return messages[phase]?.[state.difficultyMode] || messages[phase]?.simple || "Let's go!";
+    return messages[phase]?.[state.difficultyMode] || messages[phase]?.simple || "Resist and Conquer!";
   };
 
   const handleModeStart = () => {
@@ -133,7 +134,6 @@ export default function Game() {
   const handleCustomizationComplete = () => {
     if (state.currentRoom) {
       completeRoom(state.currentRoom);
-      addXP(100);
     }
     setPhase('result');
   };
@@ -175,6 +175,8 @@ export default function Game() {
           mood={state.currentPhase === 'result' ? 'proud' : state.currentPhase === 'shooter' ? 'excited' : 'happy'}
         />
 
+        <LevelUpToast />
+
         {/* Content */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -199,7 +201,7 @@ export default function Game() {
             {state.currentPhase === 'map' && (
               <>
                 {state.gameMode === 'arcade' ? (
-                  <ArcadeMode 
+                  <ArcadeMode
                     onGameOver={handleArcadeGameOver}
                     onBack={handleBackToModeSelect}
                   />
@@ -211,7 +213,7 @@ export default function Game() {
 
             {/* Inspection Phase */}
             {state.currentPhase === 'inspect' && (
-              <PCInspection 
+              <PCInspection
                 onSelectMachine={handleMachineSelect}
                 onContinue={() => setPhase('workbench')}
               />
@@ -327,7 +329,7 @@ export default function Game() {
                   autonomy={state.score.autonomy + state.shooterScore}
                   hardware={state.score.hardware}
                 />
-                
+
                 <motion.div
                   className="mt-8 p-6 border-4 border-primary bg-card"
                   initial={{ opacity: 0, y: 20 }}
@@ -361,10 +363,10 @@ export default function Game() {
           <Button
             variant="outline"
             onClick={
-              state.currentPhase === 'result' ? handleRestart : 
-              state.currentPhase === 'mode-select' ? handleRestart :
-              state.currentPhase === 'map' ? handleBackToModeSelect :
-              handleBackToMap
+              state.currentPhase === 'result' ? handleRestart :
+                state.currentPhase === 'mode-select' ? handleRestart :
+                  state.currentPhase === 'map' ? handleBackToModeSelect :
+                    handleBackToMap
             }
             className="border-2"
           >

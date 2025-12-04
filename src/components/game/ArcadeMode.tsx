@@ -14,11 +14,11 @@ interface Bloatware {
 }
 
 const bloatwareTypes = [
-  { type: 'ADS', emoji: '📢', points: 10, color: 'text-neon-yellow' },
-  { type: 'TELEMETRY', emoji: '👁️', points: 15, color: 'text-neon-pink' },
-  { type: 'UPDATES', emoji: '🔄', points: 20, color: 'text-neon-cyan' },
-  { type: 'BLOAT', emoji: '💩', points: 25, color: 'text-destructive' },
-  { type: 'TRACKER', emoji: '📍', points: 30, color: 'text-neon-orange' },
+  { type: 'ADS', emoji: '📢', points: 1, color: 'text-neon-yellow' },
+  { type: 'TELEMETRY', emoji: '👁️', points: 2, color: 'text-neon-pink' },
+  { type: 'UPDATES', emoji: '🔄', points: 3, color: 'text-neon-cyan' },
+  { type: 'BLOAT', emoji: '💩', points: 4, color: 'text-destructive' },
+  { type: 'TRACKER', emoji: '📍', points: 5, color: 'text-neon-orange' },
 ];
 
 interface ArcadeModeProps {
@@ -36,7 +36,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
   const [gameOver, setGameOver] = useState(false);
   const [level, setLevel] = useState(1);
   const [combo, setCombo] = useState(0);
-  
+
   // Use refs to avoid state updates during render
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
@@ -85,11 +85,11 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
         const updated = prev.map(b => ({ ...b, y: b.y + b.speed }));
         const escaped = updated.filter(b => b.y > 100);
         const remaining = updated.filter(b => b.y <= 100);
-        
+
         if (escaped.length > 0) {
           const newLives = livesRef.current - escaped.length;
           livesRef.current = Math.max(0, newLives);
-          
+
           // Schedule state update for next tick to avoid render-phase updates
           setTimeout(() => {
             setLives(Math.max(0, newLives));
@@ -100,7 +100,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
             }
           }, 0);
         }
-        
+
         return remaining;
       });
     }, 50);
@@ -212,7 +212,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
             <span className="text-primary ml-1">{level}</span>
           </div>
         </div>
-        
+
         <div className="text-center">
           <div className="text-2xl text-primary neon-glow font-display">{score}</div>
           {combo > 2 && (
@@ -248,7 +248,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
       </div>
 
       {/* Game Area */}
-      <div 
+      <div
         className="relative h-[400px] border-4 border-primary bg-background overflow-hidden scanline"
         style={{ touchAction: 'none' }}
       >

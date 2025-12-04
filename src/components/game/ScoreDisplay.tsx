@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import { Leaf, Wallet, Shield, Cpu } from 'lucide-react';
+import { Leaf, Wallet, Shield, Cpu, Trophy } from 'lucide-react';
+import { useGame } from '@/context/GameContext';
+import { Progress } from '@/components/ui/progress';
 
 interface ScoreDisplayProps {
   environmental: number;
@@ -9,7 +11,9 @@ interface ScoreDisplayProps {
 }
 
 export function ScoreDisplay({ environmental, money, autonomy, hardware }: ScoreDisplayProps) {
+  const { state } = useGame();
   const total = environmental + money + autonomy + hardware;
+  const xpProgress = (state.totalXP / state.xpToNextLevel) * 100;
 
   const categories = [
     { icon: Leaf, label: 'ENVIRONMENTAL', value: environmental, color: 'text-primary', glow: 'neon-glow' },
@@ -20,6 +24,24 @@ export function ScoreDisplay({ environmental, money, autonomy, hardware }: Score
 
   return (
     <div className="space-y-6">
+      {/* Level Progress */}
+      <motion.div
+        className="p-4 border-4 border-secondary bg-card mb-6"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="flex justify-between items-end mb-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-6 h-6 text-yellow-400" />
+            <span className="text-xl font-display text-primary">LEVEL {state.playerLevel}</span>
+          </div>
+          <span className="text-sm font-pixel text-muted-foreground">
+            {state.totalXP} / {state.xpToNextLevel} XP
+          </span>
+        </div>
+        <Progress value={xpProgress} className="h-4 border-2 border-muted" />
+      </motion.div>
+
       {/* Total score */}
       <motion.div
         className="text-center p-8 border-4 border-primary bg-card"

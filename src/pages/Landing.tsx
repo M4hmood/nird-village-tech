@@ -1,28 +1,28 @@
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Recycle, Leaf, Users, Sparkles, Gamepad2, Zap } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Users, Sparkles, Leaf, Gamepad2, Zap } from "lucide-react";
+
+const features = [
+  { icon: Users, title: 'INCLUSIF', description: 'Technology accessible to everyone' },
+  { icon: Sparkles, title: 'RESPONSABLE', description: 'Data sovereignty & privacy' },
+  { icon: Leaf, title: 'DURABLE', description: 'Repair, reuse, reduce e-waste' },
+];
 
 export default function Landing() {
   const navigate = useNavigate();
-
-  const features = [
-    { icon: Recycle, title: 'REPAIR', description: 'Give old PCs new life' },
-    { icon: Leaf, title: 'SUSTAIN', description: 'Reduce e-waste & carbon' },
-    { icon: Users, title: 'EMPOWER', description: 'Free software for all' },
-  ];
 
   return (
     <div className="min-h-screen bg-background overflow-hidden scanline">
       {/* Retro grid background */}
       <div className="fixed inset-0 opacity-10">
-        <div 
+        <div
           className="absolute inset-0"
           style={{
             backgroundImage: `
-              linear-gradient(hsl(120 100% 50% / 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, hsl(120 100% 50% / 0.3) 1px, transparent 1px)
-            `,
+                linear-gradient(hsl(120 100% 50% / 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, hsl(120 100% 50% / 0.3) 1px, transparent 1px)
+              `,
             backgroundSize: '40px 40px',
           }}
         />
@@ -56,7 +56,7 @@ export default function Landing() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 border-2 border-primary text-primary text-sm font-pixel">
               <Sparkles className="w-4 h-4" />
-              NIRD INITIATIVE
+              NUIT DE L'INFO 2025
             </span>
           </motion.div>
 
@@ -67,9 +67,11 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <span className="text-foreground">TECH</span>
-            <span className="block text-primary neon-glow">RESCUE</span>
-            <span className="block text-secondary neon-glow-pink text-2xl md:text-3xl mt-2">MISSION</span>
+            <span className="text-foreground">THE RESISTANT</span>
+            <span className="block text-primary neon-glow">DIGITAL VILLAGE</span>
+            <span className="block text-secondary neon-glow-pink text-xl md:text-2xl mt-4 max-w-3xl mx-auto">
+              "David vs Goliath: How schools can stand up to Big Tech?"
+            </span>
           </motion.h1>
 
           <motion.p
@@ -78,8 +80,9 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Join the resistance! Repair old computers, install Linux, 
-            and build a sustainable digital village.
+            The Empire of Big Tech is surrounding us! 🏰<br />
+            Join the NIRD resistance. Repair equipment, install free software,
+            and build an autonomous, inclusive, and sustainable digital village.
           </motion.p>
 
           {/* CTA Button */}
@@ -94,7 +97,7 @@ export default function Landing() {
               className="pixel-button text-lg animate-pulse-glow group"
             >
               <Gamepad2 className="w-5 h-5 mr-2" />
-              <span>INSERT COIN</span>
+              <span>JOIN THE RESISTANCE</span>
               <motion.span
                 className="ml-2"
                 animate={{ x: [0, 4, 0] }}
@@ -112,29 +115,29 @@ export default function Landing() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-          <motion.div
-            className="relative"
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div className="w-32 h-32 border-4 border-primary bg-card flex items-center justify-center text-6xl shadow-neon">
-              🧑‍🔧
-            </div>
             <motion.div
-              className="absolute -top-2 -right-2 text-3xl"
-              animate={{ rotate: [0, 20, -20, 0] }}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              className="relative"
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              🔧
+              <div className="w-32 h-32 border-4 border-primary bg-card flex items-center justify-center text-6xl shadow-neon">
+                🧑‍🔧
+              </div>
+              <motion.div
+                className="absolute -top-2 -right-2 text-3xl"
+                animate={{ rotate: [0, 20, -20, 0] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              >
+                🔧
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-2 -left-2 text-2xl"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              >
+                💻
+              </motion.div>
             </motion.div>
-            <motion.div
-              className="absolute -bottom-2 -left-2 text-2xl"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-            >
-              💻
-            </motion.div>
-          </motion.div>
           </motion.div>
 
           {/* Features */}
@@ -174,8 +177,8 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="py-8 text-center text-muted-foreground text-sm font-pixel border-t-2 border-muted">
-        <p>BUILT WITH 💚 FOR SUSTAINABLE DIGITAL EDUCATION</p>
-        <p className="text-xs mt-2 animate-blink">PRESS START</p>
+        <p>NIRD: Numérique Inclusif, Responsable et Durable</p>
+        <p className="text-xs mt-2">Sujet 2025: Le Village Numérique Résistant</p>
       </footer>
     </div>
   );
