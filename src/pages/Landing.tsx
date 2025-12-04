@@ -112,29 +112,29 @@ export default function Landing() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
+          <motion.div
+            className="relative"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <div className="w-32 h-32 border-4 border-primary bg-card flex items-center justify-center text-6xl shadow-neon">
+              🧑‍🔧
+            </div>
             <motion.div
-              className="relative"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "steps(4)" }}
+              className="absolute -top-2 -right-2 text-3xl"
+              animate={{ rotate: [0, 20, -20, 0] }}
+              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
             >
-              <div className="w-32 h-32 border-4 border-primary bg-card flex items-center justify-center text-6xl shadow-neon">
-                🧑‍🔧
-              </div>
-              <motion.div
-                className="absolute -top-2 -right-2 text-3xl"
-                animate={{ rotate: [0, 20, -20, 0] }}
-                transition={{ duration: 1, repeat: Infinity, ease: "steps(4)" }}
-              >
-                🔧
-              </motion.div>
-              <motion.div
-                className="absolute -bottom-2 -left-2 text-2xl"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity, ease: "steps(3)" }}
-              >
-                💻
-              </motion.div>
+              🔧
             </motion.div>
+            <motion.div
+              className="absolute -bottom-2 -left-2 text-2xl"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+            >
+              💻
+            </motion.div>
+          </motion.div>
           </motion.div>
 
           {/* Features */}
