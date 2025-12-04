@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '@/context/GameContext';
-import { Zap, Heart, Star, Pause, Play, RotateCcw } from 'lucide-react';
+import { Heart, Pause, Play, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Bloatware {
@@ -27,14 +27,19 @@ interface ArcadeModeProps {
 }
 
 export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
-  const { state, destroyBloatware, resetCombo } = useGame();
+  const { destroyBloatware } = useGame();
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [bloatwares, setBloatwares] = useState<Bloatware[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const [level, setLevel] = useState(1);
   const [combo, setCombo] = useState(0);
+  
+  // Use refs to avoid state updates during render
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
 
   const spawnBloatware = useCallback(() => {
     const typeIndex = Math.floor(Math.random() * bloatwareTypes.length);
@@ -50,54 +55,58 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
     setBloatwares(prev => [...prev, newBloatware]);
   }, [level]);
 
-  const destroyTarget = (id: number, points: number) => {
+  const destroyTarget = useCallback((id: number, points: number) => {
     setBloatwares(prev => prev.filter(b => b.id !== id));
     const comboBonus = Math.floor(combo / 5) * 5;
-    setScore(prev => prev + points + comboBonus);
+    const newScore = scoreRef.current + points + comboBonus;
+    scoreRef.current = newScore;
+    setScore(newScore);
     setCombo(prev => prev + 1);
     destroyBloatware();
-  };
+  }, [combo, destroyBloatware]);
 
-  const missTarget = () => {
-    setCombo(0);
-    resetCombo();
-  };
-
+  // Spawn interval
   useEffect(() => {
-    if (!gameStarted || isPaused) return;
+    if (!gameStarted || isPaused || gameOver) return;
 
     const spawnInterval = setInterval(() => {
       spawnBloatware();
     }, Math.max(500, 2000 - (level * 200)));
 
     return () => clearInterval(spawnInterval);
-  }, [gameStarted, isPaused, level, spawnBloatware]);
+  }, [gameStarted, isPaused, gameOver, level, spawnBloatware]);
 
+  // Move bloatwares
   useEffect(() => {
-    if (!gameStarted || isPaused) return;
+    if (!gameStarted || isPaused || gameOver) return;
 
     const moveInterval = setInterval(() => {
       setBloatwares(prev => {
         const updated = prev.map(b => ({ ...b, y: b.y + b.speed }));
         const escaped = updated.filter(b => b.y > 100);
+        const remaining = updated.filter(b => b.y <= 100);
         
         if (escaped.length > 0) {
-          setLives(l => {
-            const newLives = l - escaped.length;
+          const newLives = livesRef.current - escaped.length;
+          livesRef.current = Math.max(0, newLives);
+          
+          // Schedule state update for next tick to avoid render-phase updates
+          setTimeout(() => {
+            setLives(Math.max(0, newLives));
+            setCombo(0);
             if (newLives <= 0) {
-              onGameOver(score);
+              setGameOver(true);
+              onGameOver(scoreRef.current);
             }
-            return Math.max(0, newLives);
-          });
-          missTarget();
+          }, 0);
         }
         
-        return updated.filter(b => b.y <= 100);
+        return remaining;
       });
     }, 50);
 
     return () => clearInterval(moveInterval);
-  }, [gameStarted, isPaused, score, onGameOver]);
+  }, [gameStarted, isPaused, gameOver, onGameOver]);
 
   // Level up every 200 points
   useEffect(() => {
@@ -109,8 +118,11 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
 
   const startGame = () => {
     setGameStarted(true);
+    setGameOver(false);
     setScore(0);
+    scoreRef.current = 0;
     setLives(3);
+    livesRef.current = 3;
     setBloatwares([]);
     setLevel(1);
     setCombo(0);
@@ -118,6 +130,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
 
   const restartGame = () => {
     setGameStarted(false);
+    setGameOver(false);
     setTimeout(startGame, 100);
   };
 
@@ -141,7 +154,39 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
             <Play className="w-5 h-5 mr-2" />
             START
           </Button>
-          <Button onClick={onBack} variant="outline" className="pixel-button">
+          <Button onClick={onBack} variant="outline" className="border-2 border-muted">
+            BACK
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameOver) {
+    return (
+      <div className="text-center space-y-8 py-12">
+        <motion.div
+          className="text-8xl"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+        >
+          💀
+        </motion.div>
+        <h2 className="text-3xl text-destructive">GAME OVER</h2>
+        <div className="space-y-2">
+          <p className="text-4xl text-primary neon-glow">{score}</p>
+          <p className="text-muted-foreground font-pixel">FINAL SCORE</p>
+        </div>
+        <div className="text-muted-foreground font-pixel">
+          <p>Level reached: {level}</p>
+          <p>Max combo: {combo}x</p>
+        </div>
+        <div className="flex justify-center gap-4">
+          <Button onClick={restartGame} className="pixel-button">
+            <RotateCcw className="w-5 h-5 mr-2" />
+            TRY AGAIN
+          </Button>
+          <Button onClick={onBack} variant="outline" className="border-2 border-muted">
             BACK
           </Button>
         </div>
@@ -172,6 +217,7 @@ export function ArcadeMode({ onGameOver, onBack }: ArcadeModeProps) {
           <div className="text-2xl text-primary neon-glow font-display">{score}</div>
           {combo > 2 && (
             <motion.div
+              key={combo}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className="text-xs text-secondary font-pixel"

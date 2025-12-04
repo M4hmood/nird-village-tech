@@ -7,6 +7,13 @@ interface TechMentorProps {
   mood?: 'happy' | 'thinking' | 'excited' | 'proud';
 }
 
+const moodEmojis = {
+  happy: '😊',
+  thinking: '🤔',
+  excited: '🎮',
+  proud: '🏆',
+};
+
 export function TechMentor({ message, showTyping = true, mood = 'happy' }: TechMentorProps) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(showTyping);
@@ -29,54 +36,40 @@ export function TechMentor({ message, showTyping = true, mood = 'happy' }: TechM
         setIsTyping(false);
         clearInterval(timer);
       }
-    }, 30);
+    }, 20);
 
     return () => clearInterval(timer);
   }, [message, showTyping]);
 
-  const getMoodEmoji = () => {
-    switch (mood) {
-      case 'happy': return '😊';
-      case 'thinking': return '🤔';
-      case 'excited': return '🎉';
-      case 'proud': return '🌟';
-      default: return '😊';
-    }
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-start gap-4 mb-6"
-    >
-      {/* Mentor Avatar */}
+    <div className="flex items-start gap-4 mb-8">
+      {/* Avatar */}
       <motion.div
-        className="relative flex-shrink-0"
-        animate={{ y: [0, -5, 0] }}
+        className="flex-shrink-0 relative"
+        animate={{ y: [0, -4, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="w-16 h-16 rounded-full gradient-hero flex items-center justify-center text-3xl shadow-lg">
+        <div className="w-16 h-16 border-4 border-primary bg-card flex items-center justify-center text-3xl shadow-neon">
           🧑‍🔧
         </div>
         <motion.span
-          className="absolute -bottom-1 -right-1 text-xl"
-          animate={{ scale: [1, 1.2, 1] }}
+          className="absolute -bottom-1 -right-1 text-lg bg-background border-2 border-primary rounded-full w-7 h-7 flex items-center justify-center"
+          animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         >
-          {getMoodEmoji()}
+          {moodEmojis[mood]}
         </motion.span>
       </motion.div>
 
-      {/* Speech Bubble */}
-      <div className="relative flex-1 max-w-2xl">
-        <motion.div
-          className="bg-card rounded-2xl rounded-bl-none p-4 shadow-card border border-border"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <p className="text-foreground text-lg leading-relaxed">
+      {/* Speech bubble */}
+      <motion.div
+        className="flex-1 max-w-2xl relative"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="bg-card border-4 border-primary p-4 shadow-pixel">
+          <p className="text-foreground font-pixel text-lg leading-relaxed">
             {displayedText}
             <AnimatePresence>
               {isTyping && (
@@ -84,17 +77,17 @@ export function TechMentor({ message, showTyping = true, mood = 'happy' }: TechM
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="inline-block ml-1"
+                  className="inline-block ml-1 text-primary"
                 >
-                  <span className="animate-pulse">▌</span>
+                  <span className="animate-blink">▌</span>
                 </motion.span>
               )}
             </AnimatePresence>
           </p>
-        </motion.div>
+        </div>
         {/* Speech bubble tail */}
-        <div className="absolute -left-2 bottom-4 w-4 h-4 bg-card border-l border-b border-border transform rotate-45" />
-      </div>
-    </motion.div>
+        <div className="absolute -left-3 top-6 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-[12px] border-r-primary" />
+      </motion.div>
+    </div>
   );
 }

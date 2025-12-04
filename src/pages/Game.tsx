@@ -51,7 +51,6 @@ export default function Game() {
     resetGame,
     completeRoom,
     calculateSavings,
-    startChallenge,
     addXP,
   } = useGame();
   const navigate = useNavigate();
@@ -139,10 +138,6 @@ export default function Game() {
     setPhase('result');
   };
 
-  const handleChallengeSelect = (challengeId: string) => {
-    startChallenge(challengeId);
-  };
-
   const handleArcadeGameOver = (score: number) => {
     addXP(Math.floor(score / 10));
     setPhase('result');
@@ -196,19 +191,8 @@ export default function Game() {
             )}
 
             {/* Challenge Mode */}
-            {state.currentPhase === 'challenge' && state.gameMode === 'challenge' && (
-              <ChallengeMode 
-                onSelectChallenge={handleChallengeSelect}
-                onBack={handleBackToModeSelect}
-              />
-            )}
-
-            {/* Arcade Mode (in challenge) */}
-            {state.currentPhase === 'challenge' && state.currentChallenge && (
-              <ArcadeMode 
-                onGameOver={handleArcadeGameOver}
-                onBack={() => setPhase('challenge')}
-              />
+            {state.currentPhase === 'challenge' && (
+              <ChallengeMode onBack={handleBackToModeSelect} />
             )}
 
             {/* Map Phase */}

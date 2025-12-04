@@ -1,102 +1,76 @@
 import { motion } from 'framer-motion';
-import { Leaf, Coins, Zap, Cpu } from 'lucide-react';
+import { Leaf, Wallet, Shield, Cpu } from 'lucide-react';
 
 interface ScoreDisplayProps {
   environmental: number;
   money: number;
   autonomy: number;
   hardware: number;
-  animate?: boolean;
 }
 
-export function ScoreDisplay({ environmental, money, autonomy, hardware, animate = true }: ScoreDisplayProps) {
-  const totalScore = environmental + money + autonomy + hardware;
-  const maxScore = 400;
-  const percentage = Math.min((totalScore / maxScore) * 100, 100);
+export function ScoreDisplay({ environmental, money, autonomy, hardware }: ScoreDisplayProps) {
+  const total = environmental + money + autonomy + hardware;
 
-  const getResistanceLevel = () => {
-    if (percentage >= 80) return { level: 'Legendary', emoji: '🏆', color: 'text-secondary' };
-    if (percentage >= 60) return { level: 'Expert', emoji: '⭐', color: 'text-primary' };
-    if (percentage >= 40) return { level: 'Skilled', emoji: '🎯', color: 'text-accent' };
-    return { level: 'Apprentice', emoji: '🌱', color: 'text-muted-foreground' };
-  };
-
-  const resistance = getResistanceLevel();
-
-  const stats = [
-    { label: 'Environmental Impact', value: environmental, icon: Leaf, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Money Saved', value: money, icon: Coins, color: 'text-secondary', bg: 'bg-secondary/10' },
-    { label: 'Digital Autonomy', value: autonomy, icon: Zap, color: 'text-accent', bg: 'bg-accent/10' },
-    { label: 'Hardware Reused', value: hardware, icon: Cpu, color: 'text-foreground', bg: 'bg-muted' },
+  const categories = [
+    { icon: Leaf, label: 'ENVIRONMENTAL', value: environmental, color: 'text-primary', glow: 'neon-glow' },
+    { icon: Wallet, label: 'SAVINGS', value: money, color: 'text-neon-yellow', glow: '' },
+    { icon: Shield, label: 'AUTONOMY', value: autonomy, color: 'text-accent', glow: 'neon-glow-cyan' },
+    { icon: Cpu, label: 'HARDWARE', value: hardware, color: 'text-secondary', glow: 'neon-glow-pink' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Main Score */}
+      {/* Total score */}
       <motion.div
-        className="text-center"
-        initial={animate ? { scale: 0 } : {}}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', duration: 0.8 }}
+        className="text-center p-8 border-4 border-primary bg-card"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
+        <h2 className="text-lg text-muted-foreground font-pixel mb-2">NIRD RESISTANCE SCORE</h2>
         <motion.div
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full gradient-hero text-primary-foreground mb-4"
-          animate={{ boxShadow: ['0 0 20px hsl(152 60% 42% / 0.3)', '0 0 40px hsl(152 60% 42% / 0.5)', '0 0 20px hsl(152 60% 42% / 0.3)'] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          className="text-6xl md:text-8xl text-primary neon-glow"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
         >
-          <span className="text-3xl">{resistance.emoji}</span>
-          <div className="text-left">
-            <div className="text-sm opacity-90">NIRD Resistance Level</div>
-            <div className="text-2xl font-bold">{resistance.level}</div>
-          </div>
+          {total}
         </motion.div>
-
-        <motion.div
-          className="text-6xl font-bold text-foreground"
-          initial={animate ? { opacity: 0, y: 20 } : {}}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          {totalScore}
-          <span className="text-2xl text-muted-foreground">/{maxScore}</span>
-        </motion.div>
+        <p className="text-muted-foreground font-pixel mt-2">POINTS</p>
       </motion.div>
 
-      {/* Progress Bar */}
-      <div className="relative h-4 bg-muted rounded-full overflow-hidden">
-        <motion.div
-          className="absolute inset-y-0 left-0 gradient-hero rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {stats.map((stat, index) => (
+      {/* Category breakdown */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {categories.map((cat, index) => (
           <motion.div
-            key={stat.label}
-            className={`p-4 rounded-xl ${stat.bg} border border-border`}
-            initial={animate ? { opacity: 0, y: 20 } : {}}
+            key={cat.label}
+            className="p-4 border-4 border-muted bg-card text-center"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 + index * 0.1 }}
+            transition={{ delay: 0.5 + index * 0.1 }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
-            </div>
-            <motion.div
-              className={`text-3xl font-bold ${stat.color}`}
-              initial={animate ? { opacity: 0 } : {}}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 + index * 0.1 }}
-            >
-              +{stat.value}
-            </motion.div>
+            <cat.icon className={`w-8 h-8 mx-auto mb-2 ${cat.color}`} />
+            <div className={`text-2xl ${cat.color} ${cat.glow}`}>{cat.value}</div>
+            <p className="text-xs text-muted-foreground font-pixel mt-1">{cat.label}</p>
           </motion.div>
         ))}
       </div>
+
+      {/* Rating */}
+      <motion.div
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+      >
+        <p className="text-muted-foreground font-pixel mb-2">RATING</p>
+        <div className="text-4xl">
+          {total >= 200 ? '⭐⭐⭐' : total >= 100 ? '⭐⭐' : '⭐'}
+        </div>
+        <p className="text-primary font-pixel mt-2 neon-glow">
+          {total >= 200 ? 'TECH MASTER!' : total >= 100 ? 'GOOD JOB!' : 'KEEP PRACTICING!'}
+        </p>
+      </motion.div>
     </div>
   );
 }

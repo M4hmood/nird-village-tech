@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGame, Challenge } from '@/context/GameContext';
-import { Trophy, Clock, Target, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { Trophy, Clock, Target, Zap, Lock, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SpeedChallenge } from './challenges/SpeedChallenge';
+import { SurvivalChallenge } from './challenges/SurvivalChallenge';
+import { AccuracyChallenge } from './challenges/AccuracyChallenge';
+import { PuzzleChallenge } from './challenges/PuzzleChallenge';
 
 interface ChallengeModeProps {
-  onSelectChallenge: (challengeId: string) => void;
   onBack: () => void;
 }
 
@@ -71,7 +74,7 @@ function ChallengeCard({
           <h3 className="text-lg text-foreground mb-1">{challenge.name}</h3>
           <p className="text-sm text-muted-foreground font-pixel mb-3">{challenge.description}</p>
           
-          <div className="flex items-center gap-4 text-xs font-pixel">
+          <div className="flex items-center gap-4 text-xs font-pixel flex-wrap">
             <span className={`px-2 py-1 border ${difficultyColors[challenge.difficulty]}`}>
               {challenge.difficulty.toUpperCase()}
             </span>
@@ -92,16 +95,59 @@ function ChallengeCard({
   );
 }
 
-export function ChallengeMode({ onSelectChallenge, onBack }: ChallengeModeProps) {
-  const { state } = useGame();
+export function ChallengeMode({ onBack }: ChallengeModeProps) {
+  const { state, completeChallenge, addXP } = useGame();
+  const [activeChallenge, setActiveChallenge] = useState<string | null>(null);
   
   const completedCount = state.challenges.filter(c => c.completed).length;
   
-  // Unlock logic: first challenge always unlocked, others require previous completion
   const isUnlocked = (index: number) => {
     if (index === 0) return true;
     return state.challenges[index - 1]?.completed || false;
   };
+
+  const handleChallengeComplete = (score: number) => {
+    if (activeChallenge) {
+      const challenge = state.challenges.find(c => c.id === activeChallenge);
+      if (challenge && score >= challenge.targetScore) {
+        completeChallenge(activeChallenge, score);
+        addXP(challenge.reward);
+      }
+    }
+    setActiveChallenge(null);
+  };
+
+  const currentChallenge = state.challenges.find(c => c.id === activeChallenge);
+
+  // Render active challenge
+  if (activeChallenge && currentChallenge) {
+    const ChallengeComponent = {
+      speed: SpeedChallenge,
+      survival: SurvivalChallenge,
+      accuracy: AccuracyChallenge,
+      puzzle: PuzzleChallenge,
+    }[currentChallenge.type];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            onClick={() => setActiveChallenge(null)} 
+            variant="outline" 
+            className="border-2 border-muted"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            QUIT
+          </Button>
+          <h2 className="text-xl text-primary neon-glow">{currentChallenge.name}</h2>
+        </div>
+        <ChallengeComponent 
+          challenge={currentChallenge}
+          onComplete={handleChallengeComplete}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -142,7 +188,7 @@ export function ChallengeMode({ onSelectChallenge, onBack }: ChallengeModeProps)
             key={challenge.id}
             challenge={challenge}
             isUnlocked={isUnlocked(index)}
-            onClick={() => onSelectChallenge(challenge.id)}
+            onClick={() => setActiveChallenge(challenge.id)}
           />
         ))}
       </div>
@@ -166,8 +212,8 @@ export function ChallengeMode({ onSelectChallenge, onBack }: ChallengeModeProps)
 
       {/* Back Button */}
       <div className="flex justify-center">
-        <Button onClick={onBack} variant="outline" className="pixel-button">
-          BACK TO MAP
+        <Button onClick={onBack} variant="outline" className="border-2 border-muted">
+          BACK TO MENU
         </Button>
       </div>
     </div>
