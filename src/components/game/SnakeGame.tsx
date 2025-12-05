@@ -177,7 +177,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
     const gameLoop = setInterval(() => {
       update();
       draw();
-    }, 100);
+    }, 150);
 
     return () => clearInterval(gameLoop);
   }, [gameStarted, gameOver, update, draw]);
