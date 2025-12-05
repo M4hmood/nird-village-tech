@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Sparkles, Leaf, Gamepad2, Zap } from "lucide-react";
 import HiddenSnakeGame from "@/components/game/HiddenSnakeGame";
+import { useState } from "react";
 
 const features = [
   { icon: Users, title: 'INCLUSIF', description: 'Technology accessible to everyone' },
@@ -12,6 +13,7 @@ const features = [
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [showMiniMind, setShowMiniMind] = useState(false);
 
   return (
     <div className="min-h-screen bg-background overflow-hidden scanline">
@@ -109,15 +111,6 @@ export default function Landing() {
                 ▶
               </motion.span>
             </Button>
-
-            <Button
-              onClick={() => setShowMiniMind(true)}
-              variant="outline"
-              className="pixel-button text-lg border-green-500 text-green-500 hover:bg-green-500/10"
-            >
-              <BrainCircuit className="w-5 h-5 mr-2" />
-              <span>TRY AI SORTER</span>
-            </Button>
           </motion.div>
 
           {/* Animated character */}
@@ -192,17 +185,6 @@ export default function Landing() {
         <p>NIRD: Numérique Inclusif, Responsable et Durable</p>
         <p className="text-xs mt-2">Sujet 2025: Le Village Numérique Résistant</p>
       </footer>
-
-      {/* MiniMind Challenge Modal */}
-      {showMiniMind && (
-        <MiniMindChallenge
-          onClose={() => setShowMiniMind(false)}
-          onComplete={(score) => {
-            console.log("Challenge completed with score:", score);
-            setShowMiniMind(false);
-          }}
-        />
-      )}
     </div>
   );
 }
