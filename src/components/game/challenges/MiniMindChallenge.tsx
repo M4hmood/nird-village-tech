@@ -14,6 +14,13 @@ interface MiniMindProps {
 type Mode = 'recycling' | 'hand' | 'face';
 type ClassLabel = 'Recyclable (Paper)' | 'Danger (Plastic)' | 'Idle';
 
+interface ControlBtnProps {
+    color: 'blue' | 'red' | 'gray';
+    label: string;
+    count: number;
+    onClick: () => void;
+}
+
 const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => {
     // --- State Management ---
     const [activeMode, setActiveMode] = useState<Mode>('recycling');
@@ -46,6 +53,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
 
     // We use a ref for activeMode to access it inside the animation loop without stale closures
     const modeRef = useRef<Mode>('recycling');
+
     // --- Helper: Stop Camera ---
     const stopCamera = () => {
         if (videoRef.current && videoRef.current.srcObject) {
@@ -60,6 +68,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
         stopCamera();
         onClose?.();
     };
+
     // --- 1. Initialization ---
     useEffect(() => {
         modeRef.current = activeMode;
@@ -75,7 +84,6 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                 await tf.ready();
 
                 // Load all models in parallel for "Robustness" (or sequential if memory is tight)
-                // For a hackathon, let's load them all to ensure smooth switching
                 const [mobil, hand, face] = await Promise.all([
                     mobilenet.load({ version: 2, alpha: 0.50 }),
                     handpose.load(),
@@ -100,29 +108,40 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
         initAllModels();
 
         return () => {
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-            // specialized cleanup if needed
+            stopCamera();
+            // Optional: Dispose tensors if needed, but for these high-level models, 
+            // explicit disposal of the model object itself isn't always exposed/required 
+            // in the same way as raw tensors. The most important part is stopping the loop and camera.
+            if (classifierRef.current) {
+                classifierRef.current.clearAllClasses();
+                classifierRef.current.dispose();
+            }
         };
     }, []);
 
     // --- 2. Camera Setup ---
     const setupCamera = async () => {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user' },
-                audio: false,
-            });
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                videoRef.current.onloadedmetadata = () => {
-                    videoRef.current!.play();
-                    // Set canvas dimensions to match video
-                    if (canvasRef.current) {
-                        canvasRef.current.width = videoRef.current!.videoWidth;
-                        canvasRef.current.height = videoRef.current!.videoHeight;
-                    }
-                    detectLoop();
-                };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' },
+                    audio: false,
+                });
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    videoRef.current.onloadedmetadata = () => {
+                        videoRef.current!.play();
+                        // Set canvas dimensions to match video
+                        if (canvasRef.current) {
+                            canvasRef.current.width = videoRef.current!.videoWidth;
+                            canvasRef.current.height = videoRef.current!.videoHeight;
+                        }
+                        detectLoop();
+                    };
+                }
+            } catch (error) {
+                console.error("Camera access denied:", error);
+                setStatusText('Error: Camera Access Denied');
             }
         }
     };
@@ -192,8 +211,9 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
             if (predictions.length > 0) {
                 setStatusText(`${predictions.length} Face(s) Secure`);
                 predictions.forEach((face: any) => {
-                    const start = face.topLeft;
-                    const end = face.bottomRight;
+                    // BlazeFace returns [x, y] for topLeft and bottomRight
+                    const start = face.topLeft as [number, number];
+                    const end = face.bottomRight as [number, number];
                     const size = [end[0] - start[0], end[1] - start[1]];
 
                     // Draw Box
@@ -228,8 +248,6 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
         }
 
         // Thumb check (x-axis based, simplified for demo)
-        // If thumb tip is further out than knuckle relative to wrist
-        // This is tricky without handedness, sticking to 4 finger reliable count for demo or adding simple check
         // Simple Check: Is thumb tip higher than thumb knuckle? (Works for "High Five" pose)
         if (landmarks[4][1] < landmarks[2][1]) {
             count++;
@@ -240,7 +258,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
 
     // --- Helper: Draw Skeleton ---
     const drawHandSkeleton = (ctx: CanvasRenderingContext2D, landmarks: number[][]) => {
-        const fingerJoints = {
+        const fingerJoints: { [key: string]: number[] } = {
             thumb: [0, 1, 2, 3, 4],
             index: [0, 5, 6, 7, 8],
             middle: [0, 9, 10, 11, 12],
@@ -455,8 +473,8 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
 };
 
 // --- Sub-component ---
-const ControlBtn = ({ color, label, count, onClick }: any) => {
-    const colors: any = {
+const ControlBtn: React.FC<ControlBtnProps> = ({ color, label, count, onClick }) => {
+    const colors = {
         blue: "bg-blue-600 hover:bg-blue-500 border-blue-400",
         red: "bg-red-600 hover:bg-red-500 border-red-400",
         gray: "bg-slate-600 hover:bg-slate-500 border-slate-400"
