@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Sparkles, Leaf, Gamepad2, Zap, BrainCircuit } from "lucide-react";
+import { Users, Sparkles, Leaf, Gamepad2, Zap } from "lucide-react";
 import HiddenSnakeGame from "@/components/game/HiddenSnakeGame";
-import MiniMindChallenge from "@/components/game/challenges/MiniMindChallenge";
-import { useState } from "react";
 
 const features = [
   { icon: Users, title: 'INCLUSIF', description: 'Technology accessible to everyone' },
@@ -14,7 +12,6 @@ const features = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [showMiniMind, setShowMiniMind] = useState(false);
 
   return (
     <div className="min-h-screen bg-background overflow-hidden scanline">

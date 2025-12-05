@@ -15,4 +15,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        '@tensorflow/tfjs',
+        '@tensorflow-models/mobilenet',
+        '@tensorflow-models/knn-classifier',
+        '@tensorflow-models/handpose',
+        '@tensorflow-models/blazeface'
+      ]
+    }
+  }
 }));
