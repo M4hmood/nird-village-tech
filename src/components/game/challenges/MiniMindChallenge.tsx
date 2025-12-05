@@ -33,7 +33,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
         'Idle': 0
     });
 
-    // --- Refs ---
+    // --- Refs (Mutable objects that don't trigger re-renders) ---
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>();
@@ -44,11 +44,26 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
     const handposeRef = useRef<handpose.HandPose | null>(null);
     const blazefaceRef = useRef<blazeface.BlazeFaceModel | null>(null);
 
+    // We use a ref for activeMode to access it inside the animation loop without stale closures
     const modeRef = useRef<Mode>('recycling');
+    // --- Helper: Stop Camera ---
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
 
+    const handleClose = () => {
+        stopCamera();
+        onClose?.();
+    };
     // --- 1. Initialization ---
     useEffect(() => {
         modeRef.current = activeMode;
+        // Clear canvas when switching modes
         const ctx = canvasRef.current?.getContext('2d');
         if (ctx && canvasRef.current) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }, [activeMode]);
@@ -59,6 +74,8 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                 setStatusText('Booting Neural Core & Loading Models...');
                 await tf.ready();
 
+                // Load all models in parallel for "Robustness" (or sequential if memory is tight)
+                // For a hackathon, let's load them all to ensure smooth switching
                 const [mobil, hand, face] = await Promise.all([
                     mobilenet.load({ version: 2, alpha: 0.50 }),
                     handpose.load(),
@@ -84,6 +101,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
 
         return () => {
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            // specialized cleanup if needed
         };
     }, []);
 
@@ -98,6 +116,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                 videoRef.current.srcObject = stream;
                 videoRef.current.onloadedmetadata = () => {
                     videoRef.current!.play();
+                    // Set canvas dimensions to match video
                     if (canvasRef.current) {
                         canvasRef.current.width = videoRef.current!.videoWidth;
                         canvasRef.current.height = videoRef.current!.videoHeight;
@@ -119,14 +138,16 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
 
+        // Clear previous drawings
         if (ctx && canvas) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // We need to match the mirrored video CSS, so we flip the context
             ctx.save();
             ctx.scale(-1, 1);
             ctx.translate(-canvas.width, 0);
         }
 
-        const mode = modeRef.current;
+        const mode = modeRef.current; // Get current mode from Ref
 
         // --- BRANCH 1: RECYCLING CLASSIFIER ---
         if (mode === 'recycling' && classifierRef.current && mobilenetRef.current) {
@@ -135,17 +156,21 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                 const result = await classifierRef.current.predictClass(activation);
                 setStatusText(result.label);
                 setConfidence(result.confidences[result.label]);
+                if (result.label === 'Danger (Plastic)' && result.confidences[result.label] > 0.9) {
+                    // Trigger win/event logic here
+                }
             } else {
                 setStatusText('Waiting for Training Data...');
                 setConfidence(0);
             }
         }
 
-        // --- BRANCH 2: HAND DETECTION (Updated Logic) ---
+        // --- BRANCH 2: HAND DETECTION & COUNTING ---
         else if (mode === 'hand' && handposeRef.current && ctx) {
             const predictions = await handposeRef.current.estimateHands(video);
 
             if (predictions.length > 0) {
+                // Draw skeleton
                 predictions.forEach(hand => {
                     const landmarks = hand.landmarks;
                     drawHandSkeleton(ctx, landmarks);
@@ -170,6 +195,8 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                     const start = face.topLeft;
                     const end = face.bottomRight;
                     const size = [end[0] - start[0], end[1] - start[1]];
+
+                    // Draw Box
                     ctx.strokeStyle = '#00ff00';
                     ctx.lineWidth = 4;
                     ctx.strokeRect(start[0], start[1], size[0], size[1]);
@@ -179,48 +206,34 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
             }
         }
 
-        if (ctx) ctx.restore();
+        if (ctx) ctx.restore(); // Restore context flip
         animationRef.current = requestAnimationFrame(detectLoop);
     };
 
-    // --- Helper: Count Fingers (Robust Geometric Approach) ---
+    // --- Helper: Count Fingers ---
     const countExtendedFingers = (landmarks: number[][]): number => {
-        // We use Euclidean distance from Wrist (point 0) to Tip vs Wrist to Lower Joint
-        // This makes the logic "Rotation Invariant" (works sideways/upside down)
-
-        const wrist = landmarks[0];
-
-        // Finger Indices in HandPose:
-        // Thumb: Tip=4, Base=2 (MCP)
-        // Index: Tip=8, Base=5 (MCP)
-        // Middle: Tip=12, Base=9 (MCP)
-        // Ring: Tip=16, Base=13 (MCP)
-        // Pinky: Tip=20, Base=17 (MCP)
-
-        const fingerIndices = [
-            { tip: 4, base: 2 },  // Thumb (Using MCP as base gives better results for thumb)
-            { tip: 8, base: 5 },  // Index
-            { tip: 12, base: 9 }, // Middle
-            { tip: 16, base: 13 },// Ring
-            { tip: 20, base: 17 } // Pinky
-        ];
+        // Tips: Thumb=4, Index=8, Middle=12, Ring=16, Pinky=20
+        // PIP (Knuckles): Thumb=2, Index=6, Middle=10, Ring=14, Pinky=18
 
         let count = 0;
+        const tips = [8, 12, 16, 20];
+        const pips = [6, 10, 14, 18];
 
-        const getDistance = (p1: number[], p2: number[]) => {
-            return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2));
-        };
-
-        fingerIndices.forEach((finger) => {
-            const tipDist = getDistance(landmarks[finger.tip], wrist);
-            const baseDist = getDistance(landmarks[finger.base], wrist);
-
-            // If the tip is significantly further from the wrist than the base knuckle is, it's open.
-            // We use a 1.1 multiplier as a threshold to prevent jitter when fingers are half-curled.
-            if (tipDist > baseDist * 1.1) {
+        // Check 4 fingers (simple Y-axis check: is tip higher than knuckle?)
+        // Note: Y increases downwards in canvas. So Tip < PIP means extended.
+        for (let i = 0; i < tips.length; i++) {
+            if (landmarks[tips[i]][1] < landmarks[pips[i]][1]) {
                 count++;
             }
-        });
+        }
+
+        // Thumb check (x-axis based, simplified for demo)
+        // If thumb tip is further out than knuckle relative to wrist
+        // This is tricky without handedness, sticking to 4 finger reliable count for demo or adding simple check
+        // Simple Check: Is thumb tip higher than thumb knuckle? (Works for "High Five" pose)
+        if (landmarks[4][1] < landmarks[2][1]) {
+            count++;
+        }
 
         return count;
     };
@@ -249,12 +262,13 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
             }
         });
 
+        // Draw Joints
         ctx.fillStyle = 'red';
         for (let i = 0; i < landmarks.length; i++) {
             const x = landmarks[i][0];
             const y = landmarks[i][1];
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI); // Made dots slightly larger
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
             ctx.fill();
         }
     };
@@ -286,7 +300,7 @@ const MiniMindChallenge: React.FC<MiniMindProps> = ({ onComplete, onClose }) => 
                             OMNI_VISION_CORE.EXE
                         </h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white px-2">[X] EXIT</button>
+                    <button onClick={handleClose} className="text-slate-400 hover:text-white px-2">[X] EXIT</button>
                 </div>
 
                 {/* Main Body */}
