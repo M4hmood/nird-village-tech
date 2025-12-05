@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Sparkles, Leaf, Gamepad2, Zap } from "lucide-react";
+import HiddenSnakeGame from "@/components/game/HiddenSnakeGame";
 
 const features = [
   { icon: Users, title: 'INCLUSIF', description: 'Technology accessible to everyone' },
@@ -14,6 +15,8 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background overflow-hidden scanline">
+      <HiddenSnakeGame />
+      
       {/* Retro grid background */}
       <div className="fixed inset-0 opacity-10">
         <div

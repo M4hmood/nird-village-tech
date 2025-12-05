@@ -1,0 +1,356 @@
+/* SnakeGame.css - Game UI and canvas styling */
+
+.snake-game-container {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+  border-radius: 12px;
+  box-shadow: 
+    0 0 40px rgba(0, 255, 65, 0.3),
+    0 0 80px rgba(255, 23, 68, 0.2),
+    inset 0 0 20px rgba(0, 255, 65, 0.1);
+  overflow: hidden;
+  max-width: 900px;
+  width: 100%;
+  border: 2px solid #00ff41;
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: #00ff41;
+    box-shadow: 
+      0 0 40px rgba(0, 255, 65, 0.3),
+      0 0 80px rgba(255, 23, 68, 0.2),
+      inset 0 0 20px rgba(0, 255, 65, 0.1);
+  }
+  50% {
+    border-color: #00cc33;
+    box-shadow: 
+      0 0 60px rgba(0, 255, 65, 0.5),
+      0 0 100px rgba(255, 23, 68, 0.3),
+      inset 0 0 30px rgba(0, 255, 65, 0.2);
+  }
+}
+
+/* Header */
+.snake-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(90deg, rgba(0, 255, 65, 0.1) 0%, rgba(255, 23, 68, 0.1) 100%);
+  border-bottom: 2px solid #00ff41;
+}
+
+.snake-game-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #00ff41;
+  text-shadow: 
+    0 0 10px #00ff41,
+    0 0 20px #00cc33;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.snake-game-close {
+  background: transparent;
+  border: 2px solid #ff1744;
+  color: #ff1744;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0;
+}
+
+.snake-game-close:hover {
+  background: rgba(255, 23, 68, 0.2);
+  box-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
+}
+
+/* Main content area */
+.snake-game-content {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  flex: 1;
+}
+
+.snake-canvas-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snake-canvas {
+  display: block;
+  border: 3px solid #00ff41;
+  border-radius: 4px;
+  background: #0a0e27;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 65, 0.3),
+    inset 0 0 10px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Sidebar */
+.snake-game-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Stats */
+.snake-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 255, 65, 0.05);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #00ff41;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  font-family: 'Courier New', monospace;
+}
+
+/* Controls */
+.snake-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(255, 23, 68, 0.05);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 23, 68, 0.2);
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ff1744;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.color-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-option:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.color-option.active {
+  border-color: #fff;
+  box-shadow: 
+    0 0 8px rgba(0, 0, 0, 0.3),
+    inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.snake-start-btn,
+.snake-restart-btn {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #00ff41 0%, #00cc33 100%);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+}
+
+.snake-start-btn:hover,
+.snake-restart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.6);
+}
+
+.snake-start-btn:active,
+.snake-restart-btn:active {
+  transform: translateY(0);
+}
+
+/* Instructions */
+.snake-instructions {
+  background: rgba(0, 191, 212, 0.05);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 191, 212, 0.2);
+}
+
+.instruction-title {
+  margin: 0 0 8px 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #00bcd4;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.instruction-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+  font-size: 0.875rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.instruction-list li {
+  margin: 4px 0;
+}
+
+/* Game Over Message */
+.game-over-message {
+  background: linear-gradient(135deg, rgba(255, 23, 68, 0.2) 0%, rgba(244, 67, 54, 0.2) 100%);
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid #ff1744;
+  text-align: center;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.game-over-text {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #ff1744;
+  text-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.game-over-score {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #ff9800;
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .snake-game-content {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .snake-canvas-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .snake-canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .snake-game-sidebar {
+    width: 100%;
+  }
+
+  .snake-game-title {
+    font-size: 1.4rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .color-picker {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .snake-game-container {
+    border-radius: 8px;
+    max-width: 100%;
+  }
+
+  .snake-game-title {
+    font-size: 1.2rem;
+  }
+
+  .snake-game-header {
+    padding: 12px 16px;
+  }
+
+  .snake-game-content {
+    padding: 12px;
+  }
+
+  .snake-canvas {
+    width: 280px;
+    height: 280px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
